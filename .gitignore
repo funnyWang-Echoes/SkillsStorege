@@ -1,0 +1,27 @@
+# Python/cache
+__pycache__/
+*.py[cod]
+
+# Env/secrets
+.env
+.env.*
+!.env.example
+
+# Logs/temp
+*.log
+tmp/
+temp/
+.tmp/
+
+# Build/output artifacts
+dist/
+build/
+node_modules/
+.DS_Store
+Thumbs.db
+
+# Skill generated outputs
+papers/
+projects/
+exports/
+backup/
