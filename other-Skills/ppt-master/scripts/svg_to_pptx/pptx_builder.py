@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import mimetypes
+import os
 import re
+import posixpath
 import shutil
 import tempfile
 import zipfile
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from xml.sax.saxutils import escape
 
 from pptx import Presentation
 from pptx.util import Emu
@@ -22,7 +28,7 @@ from .pptx_dimensions import (
 )
 from .pptx_media import (
     PNG_RENDERER,
-    get_png_renderer_info, convert_svg_to_png,
+    get_png_renderer_info, convert_svg_to_png, convert_svg_to_png_cached,
 )
 from .pptx_notes import (
     markdown_to_plain_text,
@@ -99,8 +105,10 @@ _IMAGE_CONTENT_TYPES = {
     'webp': 'image/webp',
     'svg': 'image/svg+xml',
     'bmp': 'image/bmp',
+    'emf': 'image/x-emf',
     'tif': 'image/tiff',
     'tiff': 'image/tiff',
+    'wmf': 'image/x-wmf',
 }
 
 
@@ -205,11 +213,13 @@ def _build_sequence_targets(
     for seq_idx, (_has_order, _order, _original_idx, _svg_id, group_cfg) in enumerate(ordered):
         shape_id = int(group_cfg['_shape_id'])
         raw_effect = group_cfg.get('effect')
-        if raw_effect in ('mixed', 'random'):
-            effect = pick_animation_effect(str(raw_effect), seq_idx, mixed_animation_offset)
+        if raw_effect in ('auto', 'mixed', 'random'):
+            effect = pick_animation_effect(
+                str(raw_effect), seq_idx, mixed_animation_offset, group_id=_svg_id,
+            )
         else:
             effect = str(raw_effect or pick_animation_effect(
-                animation, seq_idx, mixed_animation_offset,
+                animation, seq_idx, mixed_animation_offset, group_id=_svg_id,
             ))
         item_duration = _to_float(group_cfg.get('duration'), duration)
         delay_seconds = _to_float(
@@ -221,7 +231,198 @@ def _build_sequence_targets(
     mixed_count = 0
     if animation == 'mixed':
         mixed_count = sum(1 for _target in seq_targets[1:])
+    elif animation == 'auto':
+        # 'auto' accumulates a cross-slide offset so the image pool and the
+        # unmatched-id fallback rotate as the deck advances. Single-effect
+        # semantic matches (title→fade, chart→wipe etc.) are unaffected
+        # because they ignore the offset.
+        mixed_count = len(seq_targets)
     return seq_targets, mixed_count
+
+
+def _prerender_legacy_pngs(
+    svg_files: list[Path],
+    media_dir: Path,
+    pixel_width: int,
+    pixel_height: int,
+    cache_dir: Path | None,
+    workers: int,
+    verbose: bool,
+) -> dict[int, bool]:
+    """Render every SVG→PNG into media_dir in parallel.
+
+    Returns {1-based slide index: success}. Falls back to sequential when
+    workers<=1 or len(svg_files)<=2.
+    """
+    results: dict[int, bool] = {}
+    targets: list[tuple[int, Path, Path]] = [
+        (i, svg, media_dir / f'image{i}.png')
+        for i, svg in enumerate(svg_files, 1)
+    ]
+
+    if workers <= 1 or len(targets) <= 2:
+        for i, svg, png in targets:
+            ok = convert_svg_to_png_cached(svg, png, pixel_width, pixel_height, cache_dir)
+            results[i] = ok
+            if verbose:
+                tag = 'cached/ok' if ok else 'failed'
+                print(f"  [PNG {i}/{len(targets)}] {svg.name} - {tag}")
+        return results
+
+    with ProcessPoolExecutor(max_workers=workers) as pool:
+        future_map = {
+            pool.submit(
+                convert_svg_to_png_cached,
+                svg, png, pixel_width, pixel_height, cache_dir,
+            ): (i, svg)
+            for i, svg, png in targets
+        }
+        done = 0
+        for future in as_completed(future_map):
+            i, svg = future_map[future]
+            try:
+                ok = future.result()
+            except Exception as exc:
+                ok = False
+                if verbose:
+                    print(f"  [PNG] {svg.name} - worker error: {exc}")
+            results[i] = ok
+            done += 1
+            if verbose:
+                tag = 'cached/ok' if ok else 'failed'
+                print(f"  [PNG {done}/{len(targets)}] {svg.name} - {tag}")
+
+    return results
+
+
+_REL_TARGET_RE = re.compile(r'<Relationship\b[^/]*?/>', re.DOTALL)
+_TARGET_ATTR_RE = re.compile(r'Target="([^"]+)"')
+_TARGET_MODE_EXT_RE = re.compile(r'TargetMode="External"')
+
+
+def _verify_internal_rels_targets(extract_dir: Path) -> list[str]:
+    """Return a list of dangling internal Targets across every .rels in the package.
+
+    Each entry is formatted as "<rels-path> -> <missing-target>". An empty list
+    means every internal Target resolves to a real file in the package.
+    """
+    problems: list[str] = []
+    for rels_path in extract_dir.rglob('*.rels'):
+        rels_rel = rels_path.relative_to(extract_dir).as_posix()
+        # `_rels/foo.xml.rels` lives one level below its referent's directory;
+        # Targets resolve relative to the parent of that `_rels` folder.
+        base_dir = posixpath.dirname(posixpath.dirname(rels_rel))
+        content = rels_path.read_text(encoding='utf-8')
+        for match in _REL_TARGET_RE.finditer(content):
+            element = match.group(0)
+            if _TARGET_MODE_EXT_RE.search(element):
+                continue
+            target_match = _TARGET_ATTR_RE.search(element)
+            if not target_match:
+                continue
+            target = target_match.group(1)
+            if target.startswith(('http://', 'https://', 'mailto:')):
+                continue
+            resolved = posixpath.normpath(posixpath.join(base_dir, target)) if base_dir else posixpath.normpath(target)
+            if not (extract_dir / resolved).exists():
+                problems.append(f'{rels_rel} -> {resolved}')
+    return problems
+
+
+def _presentation_format(width: float, height: float) -> str:
+    """Map the slide aspect ratio to PowerPoint's PresentationFormat label.
+    Non-standard ratios (square, portrait, banner crops) report 'Custom'.
+    """
+    if width <= 0 or height <= 0:
+        return 'Custom'
+    ratio = width / height
+    for target, label in (
+        (4 / 3, 'On-screen Show (4:3)'),
+        (16 / 9, 'On-screen Show (16:9)'),
+        (16 / 10, 'On-screen Show (16:10)'),
+    ):
+        if abs(ratio - target) < 0.02:
+            return label
+    return 'Custom'
+
+
+def _stamp_docprops(
+    extract_dir: Path,
+    slide_count: int,
+    pres_format: str,
+    meta: dict[str, Any] | None = None,
+) -> None:
+    """Overwrite the misleading python-pptx default metadata with accurate
+    values. Factual fields (slide count, export timestamp, presentation format,
+    application) are always machine-derived. Authored fields — including the
+    title — come solely from an optional per-project ``metadata.json``
+    (``meta``); whatever it omits stays blank. ``lastModifiedBy`` follows
+    ``creator`` rather than ever carrying the base template's author or a tool
+    name. No field is guessed from slide content: a blank title is preferable
+    to an unreliable heuristic pick.
+    """
+    meta = meta or {}
+
+    def field(key: str, default: str = '') -> str:
+        value = meta.get(key)
+        return value.strip() if isinstance(value, str) and value.strip() else default
+
+    title = field('title')
+    creator = field('creator')
+
+    now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+    core_path = extract_dir / 'docProps' / 'core.xml'
+    if core_path.exists():
+        core_path.write_text(
+            "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n"
+            '<cp:coreProperties '
+            'xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" '
+            'xmlns:dc="http://purl.org/dc/elements/1.1/" '
+            'xmlns:dcterms="http://purl.org/dc/terms/" '
+            'xmlns:dcmitype="http://purl.org/dc/dcmitype/" '
+            'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
+            f'<dc:title>{escape(title)}</dc:title>'
+            f'<dc:subject>{escape(field("subject"))}</dc:subject>'
+            f'<dc:creator>{escape(creator)}</dc:creator>'
+            f'<cp:keywords>{escape(field("keywords"))}</cp:keywords>'
+            f'<dc:description>{escape(field("description"))}</dc:description>'
+            f'<dc:language>{escape(field("language"))}</dc:language>'
+            f'<cp:lastModifiedBy>{escape(creator)}</cp:lastModifiedBy>'
+            '<cp:revision>1</cp:revision>'
+            f'<dcterms:created xsi:type="dcterms:W3CDTF">{now}</dcterms:created>'
+            f'<dcterms:modified xsi:type="dcterms:W3CDTF">{now}</dcterms:modified>'
+            f'<cp:category>{escape(field("category"))}</cp:category>'
+            f'<cp:contentStatus>{escape(field("contentStatus"))}</cp:contentStatus>'
+            '</cp:coreProperties>',
+            encoding='utf-8',
+        )
+
+    app_path = extract_dir / 'docProps' / 'app.xml'
+    if app_path.exists():
+        app = app_path.read_text(encoding='utf-8')
+        app = re.sub(r'<Slides>.*?</Slides>', f'<Slides>{slide_count}</Slides>', app)
+        app = re.sub(
+            r'<Company>.*?</Company>',
+            f'<Company>{escape(field("company"))}</Company>',
+            app,
+        )
+        app = re.sub(
+            r'<Manager>.*?</Manager>',
+            f'<Manager>{escape(field("manager"))}</Manager>',
+            app,
+        )
+        app = re.sub(
+            r'<Application>.*?</Application>',
+            '<Application>Microsoft Office PowerPoint</Application>',
+            app,
+        )
+        app = re.sub(
+            r'<PresentationFormat>.*?</PresentationFormat>',
+            f'<PresentationFormat>{escape(pres_format)}</PresentationFormat>',
+            app,
+        )
+        app_path.write_text(app, encoding='utf-8')
 
 
 def create_pptx_with_native_svg(
@@ -245,6 +446,11 @@ def create_pptx_with_native_svg(
     narration_audio: dict[str, Path] | None = None,
     use_narration_timings: bool = False,
     narration_padding: float = 0.5,
+    cache_dir: Path | None = None,
+    workers: int | None = None,
+    merge_paragraphs: bool = True,
+    conversion_trace_path: Path | None = None,
+    doc_metadata: dict[str, Any] | None = None,
 ) -> bool:
     """Create a PPTX file with native SVG.
 
@@ -272,6 +478,7 @@ def create_pptx_with_native_svg(
         narration_audio: Optional dict mapping SVG stem to narration audio file.
         use_narration_timings: Whether to set slide auto-advance from audio duration.
         narration_padding: Extra seconds added after each narration before advancing.
+        conversion_trace_path: Optional JSON path for native conversion diagnostics.
 
     Returns:
         Whether all slides were successfully created.
@@ -359,6 +566,23 @@ def create_pptx_with_native_svg(
         media_dir = extract_dir / 'ppt' / 'media'
         media_dir.mkdir(exist_ok=True)
 
+        prerender_results: dict[int, bool] | None = None
+        if not use_native_shapes and use_compat_mode and PNG_RENDERER is not None:
+            if workers is None:
+                resolved_workers = min(os.cpu_count() or 2, len(svg_files), 8)
+            else:
+                resolved_workers = max(0, workers)
+            if verbose:
+                cache_label = str(cache_dir) if cache_dir else 'disabled'
+                mode = f'parallel x{resolved_workers}' if resolved_workers > 1 else 'sequential'
+                print(f"  Pre-rendering PNGs ({mode}, cache: {cache_label})")
+            prerender_results = _prerender_legacy_pngs(
+                svg_files, media_dir, pixel_width, pixel_height,
+                cache_dir, resolved_workers, verbose,
+            )
+            if verbose:
+                print()
+
         success_count = 0
         has_any_image = False
         media_cache: dict[tuple[str, str], str] = {}
@@ -367,6 +591,7 @@ def create_pptx_with_native_svg(
         narration_slides_created: set[int] = set()
         audio_exts_used: set[str] = set()
         mixed_animation_offset = 0
+        conversion_trace: list[dict[str, Any]] | None = [] if conversion_trace_path else None
 
         for i, svg_path in enumerate(svg_files, 1):
             slide_num = i
@@ -378,6 +603,8 @@ def create_pptx_with_native_svg(
                     slide_xml, media_files_dict, rel_entries, anim_targets = (
                         convert_svg_to_slide_shapes(
                             svg_path, slide_num=slide_num, verbose=verbose,
+                            merge_paragraphs=merge_paragraphs,
+                            trace_out=conversion_trace,
                         )
                     )
                     slide_transition, slide_transition_duration, slide_auto_advance = (
@@ -430,7 +657,7 @@ def create_pptx_with_native_svg(
                             slide_animation_stagger,
                             mixed_animation_offset,
                         )
-                        if slide_animation == 'mixed':
+                        if slide_animation in ('mixed', 'auto'):
                             mixed_animation_offset += mixed_count
                         timing_xml = '\n' + create_sequence_timing_xml(
                             seq_targets, duration=slide_animation_duration,
@@ -518,11 +745,14 @@ def create_pptx_with_native_svg(
 
                     slide_has_png = False
                     if use_compat_mode:
-                        png_path = media_dir / png_filename
-                        png_success = convert_svg_to_png(
-                            svg_path, png_path,
-                            width=pixel_width, height=pixel_height,
-                        )
+                        if prerender_results is not None:
+                            png_success = prerender_results.get(i, False)
+                        else:
+                            png_path = media_dir / png_filename
+                            png_success = convert_svg_to_png(
+                                svg_path, png_path,
+                                width=pixel_width, height=pixel_height,
+                            )
                         if png_success:
                             slide_has_png = True
                             has_any_image = True
@@ -710,6 +940,20 @@ def create_pptx_with_native_svg(
             with open(content_types_path, 'w', encoding='utf-8') as f:
                 f.write(content_types)
 
+        rels_problems = _verify_internal_rels_targets(extract_dir)
+        if rels_problems:
+            details = '\n'.join(f'  - {p}' for p in rels_problems)
+            raise RuntimeError(
+                'PPTX package contains dangling internal relationship targets; '
+                'PowerPoint will report the file as corrupt:\n' + details
+            )
+
+        # Replace the python-pptx base-template metadata (stale "Steve Canny"
+        # author, 2013 dates, "generated using python-pptx", Slides=0) with
+        # accurate, tool-neutral document properties.
+        pres_format = _presentation_format(width_emu, height_emu)
+        _stamp_docprops(extract_dir, len(svg_files), pres_format, doc_metadata)
+
         # Repackage PPTX to a temporary file first. The public output path is
         # replaced only after every slide and relationship has succeeded.
         temp_output_path = temp_dir / 'result.pptx'
@@ -720,9 +964,23 @@ def create_pptx_with_native_svg(
                     zf.write(file_path, arcname)
         shutil.move(str(temp_output_path), str(output_path))
 
+        if conversion_trace_path and conversion_trace is not None:
+            conversion_trace_path.parent.mkdir(parents=True, exist_ok=True)
+            payload = {
+                'output': str(output_path),
+                'slide_count': len(svg_files),
+                'slides': conversion_trace,
+            }
+            conversion_trace_path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2),
+                encoding='utf-8',
+            )
+
         if verbose:
             print()
             print(f"[Done] Saved: {output_path}")
+            if conversion_trace_path and conversion_trace is not None:
+                print(f"  Trace: {conversion_trace_path}")
             print(f"  Succeeded: {success_count}, Failed: {len(svg_files) - success_count}")
             if use_compat_mode and has_any_image:
                 print(f"  Mode: Office compatibility mode (supports all Office versions)")

@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import math
 import re
 from pathlib import Path
+from typing import Any
 from xml.etree import ElementTree as ET
 
 from .drawingml_context import ConvertContext, ShapeResult
 from .drawingml_utils import (
-    SVG_NS,
+    SVG_NS, EMU_PER_PX,
     _extract_inheritable_styles, parse_transform_matrix, resolve_url_id,
 )
 from .drawingml_styles import build_effect_xml
@@ -39,6 +41,7 @@ _CHROME_ID_TOKENS = frozenset({
     'header', 'footer',
     'chrome', 'watermark',
     'pagenumber', 'pagenum',
+    'nav', 'logo', 'rule',
 })
 
 
@@ -57,33 +60,72 @@ def _is_chrome_id(elem_id: str | None) -> bool:
 # ---------------------------------------------------------------------------
 
 def parse_transform(transform_str: str) -> tuple[float, float, float, float, float]:
-    """Parse SVG transform string, extract translate, scale, and rotate.
+    """Parse an SVG transform list into (dx, dy, sx, sy, angle_deg).
 
-    Returns:
-        (dx, dy, sx, sy, angle_deg) tuple.
+    Composes every translate/scale/rotate/matrix operation rather than picking
+    the first occurrence — needed for idioms like
+    ``translate(cx cy) scale(-1 -1) translate(-cx -cy)`` which encode a flip
+    around a non-origin pivot.
+
+    When the composed matrix has no shear and no rotation, the decomposition is
+    exact (sx/sy may be negative to represent flips). When rotation is present
+    without shear, sx/sy default to the column magnitudes and angle_deg is the
+    rotation. Shear is not representable in this 5-tuple and silently
+    collapses; callers that need exact fidelity should consume the full matrix
+    via ``parse_transform_matrix``.
     """
     if not transform_str:
         return 0.0, 0.0, 1.0, 1.0, 0.0
 
-    dx, dy = 0.0, 0.0
-    sx, sy = 1.0, 1.0
-    angle_deg = 0.0
+    a, b, c, d, e, f = parse_transform_matrix(transform_str)
 
-    m = re.search(r'translate\(\s*([-\d.]+)[\s,]+([-\d.]+)\s*\)', transform_str)
-    if m:
-        dx = float(m.group(1))
-        dy = float(m.group(2))
+    # No shear / rotation: direct decomposition preserves the original signs of
+    # sx / sy. ctx_x / ctx_y use the simple ``val * sx + tx`` formula, so this
+    # is the only form that survives flip-around-pivot composites without
+    # collapsing them into a rotation that the consumer can't honour.
+    if abs(b) < 1e-9 and abs(c) < 1e-9:
+        sx = a if a != 0 else 1.0
+        sy = d if d != 0 else 1.0
+        return e, f, sx, sy, 0.0
 
-    m = re.search(r'scale\(\s*([-\d.]+)(?:[\s,]+([-\d.]+))?\s*\)', transform_str)
-    if m:
-        sx = float(m.group(1))
-        sy = float(m.group(2)) if m.group(2) else sx
+    sx = math.hypot(a, b)
+    sy = math.hypot(c, d)
+    if sx == 0:
+        sx = 1.0
+    if sy == 0:
+        sy = 1.0
 
-    m = re.search(r'rotate\(\s*([-\d.]+)', transform_str)
-    if m:
-        angle_deg = float(m.group(1))
+    angle_deg = math.degrees(math.atan2(b, a))
+    return e, f, sx, sy, angle_deg
 
-    return dx, dy, sx, sy, angle_deg
+
+# ``rotate(angle)`` defaults to pivot (0,0); ``rotate(angle, cx, cy)`` rotates
+# around (cx, cy). DrawingML grpSp ``rot`` always rotates around the group's
+# own bounding-box centre — we need the SVG pivot so ``convert_g`` can
+# compensate for the offset between those two centres.
+_ROTATE_RE = re.compile(
+    r'rotate\(\s*([-\d.eE+]+)(?:[\s,]+([-\d.eE+]+)[\s,]+([-\d.eE+]+))?\s*\)'
+)
+
+
+def _extract_rotate_pivot(transform_str: str) -> tuple[float, float] | None:
+    """Return the (cx, cy) pivot of a sole ``rotate(...)`` in *transform_str*.
+
+    Returns ``None`` when the transform list contains anything other than one
+    rotate (other ops compose with rotate in a way the pivot-compensation
+    fallback can't express). A bare ``rotate(angle)`` returns (0, 0).
+    """
+    if not transform_str:
+        return None
+    ops = [op for op in re.findall(r'(\w+)\s*\(', transform_str) if op]
+    if ops != ['rotate']:
+        return None
+    match = _ROTATE_RE.search(transform_str)
+    if not match:
+        return None
+    cx = float(match.group(2)) if match.group(2) is not None else 0.0
+    cy = float(match.group(3)) if match.group(3) is not None else 0.0
+    return cx, cy
 
 
 # ---------------------------------------------------------------------------
@@ -114,10 +156,25 @@ def convert_g(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     matrix_supported = bool(transform) and visual_children and all(
         _supports_matrix_transform(child) for child in visual_children
     )
+    # A pure ``rotate(angle [cx cy])`` falls through to the fallback path
+    # below (children are rect/text/path/etc. that don't consume a full
+    # matrix). Decomposing the matrix produces translation components
+    # (e, f) that encode the pivot — handing those to children would
+    # *double-translate* them because grpSp's own ``rot`` already
+    # rotates around the group's bounding-box centre. Skip the child
+    # translation here and apply pivot-centre compensation to ``a:off``
+    # below instead.
+    rotate_pivot = _extract_rotate_pivot(transform) if not matrix_supported else None
     if matrix_supported:
         child_ctx = ctx.child(
             0, 0, 1.0, 1.0,
             transform_matrix=parse_transform_matrix(transform),
+            filter_id=filter_id,
+            style_overrides=style_overrides,
+        )
+    elif rotate_pivot is not None:
+        child_ctx = ctx.child(
+            0, 0, 1.0, 1.0,
             filter_id=filter_id,
             style_overrides=style_overrides,
         )
@@ -163,6 +220,31 @@ def convert_g(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     group_w = max(int(max_x - min_x), 1)
     group_h = max(int(max_y - min_y), 1)
 
+    # ``rotate(angle, cx, cy)`` rotates around the SVG pivot, but DrawingML
+    # grpSp ``rot`` always rotates around the group's own bbox centre. When
+    # those centres differ, the visual position drifts by exactly the
+    # translation a rotate-around-pivot equals. Compensate by offsetting the
+    # outer <a:off> only; <a:chOff> stays on the unshifted bbox so children
+    # (still at their original SVG positions because rotate_pivot suppressed
+    # the dx/dy translation above) remain aligned inside the group.
+    off_x = group_x
+    off_y = group_y
+    if rotate_pivot is not None and angle_deg:
+        cx_svg, cy_svg = rotate_pivot
+        pivot_ex = (cx_svg + ctx.translate_x) * EMU_PER_PX
+        pivot_ey = (cy_svg + ctx.translate_y) * EMU_PER_PX
+        bbox_cx = group_x + group_w / 2
+        bbox_cy = group_y + group_h / 2
+        theta = math.radians(angle_deg)
+        cos_t = math.cos(theta)
+        sin_t = math.sin(theta)
+        # Where the bbox centre lands after rotating around the pivot, minus
+        # where DrawingML's grpSp rot would leave it (i.e. unchanged).
+        delta_x = (bbox_cx - pivot_ex) * cos_t - (bbox_cy - pivot_ey) * sin_t + pivot_ex - bbox_cx
+        delta_y = (bbox_cx - pivot_ex) * sin_t + (bbox_cy - pivot_ey) * cos_t + pivot_ey - bbox_cy
+        off_x = int(round(group_x + delta_x))
+        off_y = int(round(group_y + delta_y))
+
     shapes_xml = '\n'.join(result.xml for result in child_results)
     group_id = ctx.next_id()
 
@@ -189,7 +271,7 @@ def convert_g(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
 </p:nvGrpSpPr>
 <p:grpSpPr>
 <a:xfrm{rot_attr}>
-<a:off x="{group_x}" y="{group_y}"/>
+<a:off x="{off_x}" y="{off_y}"/>
 <a:ext cx="{group_w}" cy="{group_h}"/>
 <a:chOff x="{group_x}" y="{group_y}"/>
 <a:chExt cx="{group_w}" cy="{group_h}"/>
@@ -267,17 +349,44 @@ def collect_defs(root: ET.Element) -> dict[str, ET.Element]:
 def convert_element(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     """Dispatch an SVG element to the appropriate converter."""
     tag = elem.tag.replace(f'{{{SVG_NS}}}', '')
+    elem_id = elem.get('id')
+
+    def trace(decision: str, **metadata: Any) -> None:
+        if ctx.trace_events is None:
+            return
+        event: dict[str, Any] = {
+            'tag': tag,
+            'decision': decision,
+        }
+        if elem_id:
+            event['id'] = elem_id
+        event.update(metadata)
+        ctx.trace_events.append(event)
 
     converter = _CONVERTERS.get(tag)
     if converter:
         try:
-            return converter(elem, ctx)
+            result = converter(elem, ctx)
         except Exception as e:
+            trace('error', error=str(e))
             raise SvgNativeConversionError(f'Failed to convert <{tag}>: {e}') from e
+        if result:
+            shape_match = re.search(r'<p:cNvPr id="(\d+)"', result.xml)
+            metadata: dict[str, Any] = {}
+            if shape_match:
+                metadata['shape_id'] = int(shape_match.group(1))
+            if result.bounds_emu is not None:
+                metadata['bounds_emu'] = list(result.bounds_emu)
+            trace('native', **metadata)
+        else:
+            trace('skip', reason='empty-or-non-rendering')
+        return result
 
     if tag in _NON_VISUAL_TAGS:
+        trace('skip', reason='non-visual')
         return None
 
+    trace('unsupported')
     raise SvgNativeConversionError(f'Unsupported visual SVG element <{tag}>')
 
 
@@ -311,6 +420,8 @@ def convert_svg_to_slide_shapes(
     svg_path: Path,
     slide_num: int = 1,
     verbose: bool = False,
+    merge_paragraphs: bool = True,
+    trace_out: list[dict[str, Any]] | None = None,
 ) -> tuple[str, dict[str, bytes], list[dict[str, str]], list]:
     """Convert an SVG file to a complete DrawingML slide XML.
 
@@ -318,6 +429,11 @@ def convert_svg_to_slide_shapes(
         svg_path: Path to the SVG file.
         slide_num: Slide number (for naming).
         verbose: Print progress info.
+        merge_paragraphs: When True, mergeable paragraph blocks (same x,
+            dy clustered around one base line-height) become a single
+            editable text frame with multiple <a:p>. Disable it to preserve
+            the SVG's exact line layout (one textbox per line).
+        trace_out: Optional list populated with one per-slide trace dictionary.
 
     Returns:
         (slide_xml, media_files, rel_entries, anim_targets) where:
@@ -330,6 +446,8 @@ def convert_svg_to_slide_shapes(
     """
     tree = ET.parse(str(svg_path))
     root = tree.getroot()
+    trace_events: list[dict[str, Any]] | None = [] if trace_out is not None else None
+    trace_steps: list[dict[str, Any]] = []
 
     # Expand <use data-icon="..."/> placeholders in-memory so this dispatcher
     # can consume svg_output/ directly. Standard renderers and this converter
@@ -340,6 +458,8 @@ def convert_svg_to_slide_shapes(
     if icons_dir.exists():
         from .use_expander import expand_use_data_icons
         expanded = expand_use_data_icons(root, icons_dir)
+        if expanded:
+            trace_steps.append({'action': 'expand-use-data-icons', 'count': expanded})
         if verbose and expanded:
             print(f'  Expanded {expanded} <use data-icon="..."/> placeholder(s)')
 
@@ -349,9 +469,17 @@ def convert_svg_to_slide_shapes(
     # and an x-anchored tspan would render in the wrong column. finalize_svg
     # does the same flattening on disk; doing it here keeps native pptx output
     # correct when reading raw svg_output/.
+    # merge_paragraphs additionally folds mergeable paragraph blocks into a
+    # single annotated <text> for downstream multi-<a:p> conversion.
     from .tspan_flattener import flatten_positional_tspans
-    if flatten_positional_tspans(tree) and verbose:
-        print('  Flattened positional <tspan> into independent <text>')
+    flattened = flatten_positional_tspans(tree, merge_paragraphs=merge_paragraphs)
+    if flattened:
+        trace_steps.append({
+            'action': 'flatten-positional-tspans',
+            'merge_paragraphs': merge_paragraphs,
+        })
+        if verbose:
+            print('  Flattened positional <tspan> into independent <text>')
 
     unsupported = _collect_unsupported_visuals(root)
     if unsupported:
@@ -362,7 +490,13 @@ def convert_svg_to_slide_shapes(
         )
 
     defs = collect_defs(root)
-    ctx = ConvertContext(defs=defs, slide_num=slide_num, svg_dir=Path(svg_path).parent)
+    ctx = ConvertContext(
+        defs=defs,
+        slide_num=slide_num,
+        svg_dir=Path(svg_path).parent,
+        merge_paragraphs=merge_paragraphs,
+        trace_events=trace_events,
+    )
 
     shapes: list[str] = []
     converted = 0
@@ -398,6 +532,21 @@ def convert_svg_to_slide_shapes(
 
     if verbose:
         print(f'  Converted {converted} elements, skipped {skipped}')
+
+    if trace_out is not None:
+        trace_out.append({
+            'slide_num': slide_num,
+            'svg': str(svg_path),
+            'summary': {
+                'converted': converted,
+                'skipped': skipped,
+                'media_files': len(ctx.media_files),
+                'relationships': len(ctx.rel_entries),
+                'animation_targets': len(ctx.anim_targets),
+            },
+            'preprocess': trace_steps,
+            'events': trace_events or [],
+        })
 
     shapes_xml = '\n'.join(shapes)
 

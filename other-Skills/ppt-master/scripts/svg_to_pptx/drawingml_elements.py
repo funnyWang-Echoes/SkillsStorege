@@ -17,7 +17,7 @@ from .drawingml_utils import (
     rect_to_dml_xfrm,
     parse_hex_color, resolve_url_id, get_effective_filter_id,
     parse_font_family, is_cjk_char, estimate_text_width,
-    _xml_escape,
+    parse_transform_matrix, _xml_escape,
 )
 from .drawingml_styles import (
     build_solid_fill, build_gradient_fill,
@@ -65,6 +65,30 @@ def _wrap_shape(
 # fraction of the radius. Standard "magic number" for a 90° arc (max error
 # ~0.027% of the radius).
 _BEZIER_QUARTER_K = 0.5522847498
+
+
+def _build_preset_geom_from_meta(elem: ET.Element) -> str | None:
+    """Build native DrawingML preset geometry from SVG metadata."""
+    prst = elem.get('data-pptx-prst')
+    if prst != 'round2SameRect':
+        return None
+
+    def _adj_attr(name: str, default: int) -> int:
+        try:
+            return int(float(elem.get(name, str(default))))
+        except ValueError:
+            return default
+
+    adj1 = max(0, min(100000, _adj_attr('data-pptx-adj1', 16667)))
+    adj2 = max(0, min(100000, _adj_attr('data-pptx-adj2', 0)))
+    return (
+        '<a:prstGeom prst="round2SameRect">'
+        '<a:avLst>'
+        f'<a:gd name="adj1" fmla="val {adj1}"/>'
+        f'<a:gd name="adj2" fmla="val {adj2}"/>'
+        '</a:avLst>'
+        '</a:prstGeom>'
+    )
 
 
 def _build_round_rect_custgeom(w: float, h: float, rx: float, ry: float) -> str:
@@ -617,7 +641,9 @@ def convert_path(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     w_emu = px_to_emu(width)
     h_emu = px_to_emu(height)
 
-    geom = f'''<a:custGeom>
+    geom = _build_preset_geom_from_meta(elem)
+    if geom is None:
+        geom = f'''<a:custGeom>
 <a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/>
 <a:rect l="l" t="t" r="r" b="b"/>
 <a:pathLst><a:path w="{w_emu}" h="{h_emu}">
@@ -811,6 +837,15 @@ def _override_run_attrs(
         c = parse_hex_color(child_fill)
         if c:
             run_attrs['fill'] = c
+    if tspan.get('stroke'):
+        run_attrs['stroke_raw'] = tspan.get('stroke')
+    if tspan.get('stroke-width'):
+        run_attrs['stroke_width'] = _f(tspan.get('stroke-width'), run_attrs.get('stroke_width', 1.0))
+    if tspan.get('stroke-opacity'):
+        try:
+            run_attrs['stroke_opacity'] = float(tspan.get('stroke-opacity', '1'))
+        except ValueError:
+            pass
     if tspan.get('font-size'):
         run_attrs['font_size'] = _f(tspan.get('font-size'), run_attrs['font_size'])
     if tspan.get('font-family'):
@@ -889,6 +924,49 @@ def _build_text_runs(
     return runs
 
 
+def _build_text_fill_xml(
+    fill: str,
+    fill_raw: str,
+    opacity: float | None,
+    ctx: ConvertContext | None,
+) -> str:
+    """Build DrawingML fill XML for a text run."""
+    if fill_raw == 'none':
+        return '<a:noFill/>'
+
+    grad_id = resolve_url_id(fill_raw)
+    if grad_id and ctx and grad_id in ctx.defs:
+        return build_gradient_fill(ctx.defs[grad_id], opacity)
+
+    alpha_xml = ''
+    if opacity is not None and opacity < 1.0:
+        alpha_xml = f'<a:alphaMod val="{int(opacity * 100000)}"/>'
+    return f'<a:solidFill><a:srgbClr val="{fill}">{alpha_xml}</a:srgbClr></a:solidFill>'
+
+
+def _build_text_outline_xml(run: dict[str, Any]) -> str:
+    """Build DrawingML outline XML for a text run from SVG stroke attributes."""
+    stroke_raw = run.get('stroke_raw')
+    if not stroke_raw or stroke_raw == 'none':
+        return ''
+
+    color = parse_hex_color(stroke_raw)
+    if not color:
+        return ''
+
+    stroke_width = _f(str(run.get('stroke_width', 1.0)), 1.0)
+    stroke_opacity = run.get('stroke_opacity')
+    alpha_xml = ''
+    if stroke_opacity is not None and stroke_opacity < 1.0:
+        alpha_xml = f'<a:alphaMod val="{int(stroke_opacity * 100000)}"/>'
+
+    return (
+        f'<a:ln w="{px_to_emu(stroke_width)}">'
+        f'<a:solidFill><a:srgbClr val="{color}">{alpha_xml}</a:srgbClr></a:solidFill>'
+        '</a:ln>'
+    )
+
+
 def _build_run_xml(
     run: dict[str, Any],
     default_fonts: dict[str, str],
@@ -915,20 +993,14 @@ def _build_run_xml(
 
     fonts = parse_font_family(ff) if ff else default_fonts
 
-    # Build fill XML - gradient or solid
-    grad_id = resolve_url_id(fill_raw)
-    if grad_id and ctx and grad_id in ctx.defs:
-        fill_xml = build_gradient_fill(ctx.defs[grad_id], opacity)
-    else:
-        alpha_xml = ''
-        if opacity is not None and opacity < 1.0:
-            alpha_xml = f'<a:alpha val="{int(opacity * 100000)}"/>'
-        fill_xml = f'<a:solidFill><a:srgbClr val="{fill}">{alpha_xml}</a:srgbClr></a:solidFill>'
+    fill_xml = _build_text_fill_xml(fill, fill_raw, opacity, ctx)
+    outline_xml = _build_text_outline_xml(run)
 
     space_attr = ' xml:space="preserve"' if text != text.strip() or '  ' in text else ''
 
     return f'''<a:r>
 <a:rPr lang="zh-CN" sz="{sz}"{b_attr}{i_attr}{u_attr}{strike_attr} dirty="0">
+{outline_xml}
 {fill_xml}
 {effect_xml}
 <a:latin typeface="{_xml_escape(fonts['latin'])}"/>
@@ -950,6 +1022,9 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     fill_raw = _get_attr(elem, 'fill', ctx) or '#000000'
     fill_color = parse_hex_color(fill_raw) or '000000'
     opacity = get_fill_opacity(elem, ctx)
+    stroke_raw = _get_attr(elem, 'stroke', ctx) or ''
+    stroke_width = _f(_get_attr(elem, 'stroke-width', ctx), 1.0)
+    stroke_opacity = get_stroke_opacity(elem, ctx)
     font_style = _get_attr(elem, 'font-style', ctx) or ''
     text_decoration = _get_attr(elem, 'text-decoration', ctx) or ''
 
@@ -964,8 +1039,79 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
         'font_style': font_style,
         'text_decoration': text_decoration,
         'opacity': opacity,
+        'stroke_raw': stroke_raw,
+        'stroke_width': stroke_width,
+        'stroke_opacity': stroke_opacity,
     }
-    runs = _build_text_runs(elem, parent_attrs)
+
+    # Paragraph mode: flatten_tspan marks <text> with data-paragraph-line-height
+    # when its direct-child tspans form a mergeable paragraph (same x, dy
+    # clustered around one base line-height). Each direct tspan becomes one
+    # <a:p> so the paragraph survives as a single editable text frame.
+    # Per-line data-paragraph-space-before encodes paragraph gaps (extra dy
+    # above the base line-height) for the corresponding <a:p>.
+    # Paragraph mode is controlled by ctx.merge_paragraphs. When off, ignore
+    # any data-paragraph-* markers and fall through to the original
+    # one-text-per-tspan path so the SVG's pixel layout is preserved.
+    line_height_attr = elem.get('data-paragraph-line-height') if ctx.merge_paragraphs else None
+    line_height_px = _f(line_height_attr) if line_height_attr is not None else None
+    paragraph_runs: list[list[dict[str, Any]]] | None = None
+    paragraph_space_before: list[float] = []
+    # Per-tspan widths (visual lines as the deck author drew them) regardless
+    # of how many merge into one <a:p>; used to size the textbox so PowerPoint
+    # has room to wrap text to the SVG's original line widths.
+    visual_line_widths: list[float] = []
+    if line_height_px is not None and line_height_px > 0:
+        preserve_space = _preserves_space(elem)
+        paragraph_runs = []
+        for child in elem:
+            if child.tag != f'{{{SVG_NS}}}tspan':
+                continue
+            line_runs = _collect_tspan_runs(child, parent_attrs, preserve_space)
+            if line_runs and not preserve_space:
+                line_runs[0]['text'] = line_runs[0]['text'].lstrip(' ')
+                line_runs[-1]['text'] = line_runs[-1]['text'].rstrip(' ')
+                line_runs = [r for r in line_runs if r['text']]
+            if not line_runs:
+                continue
+            visual_line_widths.append(
+                estimate_text_width(
+                    ''.join(r['text'] for r in line_runs),
+                    font_size,
+                    font_weight,
+                )
+            )
+            soft_break = child.get('data-paragraph-soft-break') == '1'
+            if soft_break and paragraph_runs:
+                # Append to the previous paragraph. A Latin line-wrap needs a
+                # space to keep two words apart (SVG used a dy break, not
+                # punctuation); CJK wraps mid-sentence with no inter-character
+                # space, so a joining space there is a spurious artifact.
+                prev = paragraph_runs[-1]
+                prev_text = prev[-1]['text'] if prev else ''
+                next_text = line_runs[0]['text']
+                boundary_is_cjk = (
+                    (prev_text and is_cjk_char(prev_text[-1]))
+                    or (next_text and is_cjk_char(next_text[0]))
+                )
+                if prev and not prev_text.endswith(' ') \
+                        and not next_text.startswith(' ') \
+                        and not boundary_is_cjk:
+                    prev[-1] = {**prev[-1], 'text': prev_text + ' '}
+                prev.extend(line_runs)
+            else:
+                paragraph_runs.append(line_runs)
+                sb_attr = child.get('data-paragraph-space-before')
+                paragraph_space_before.append(_f(sb_attr) if sb_attr else 0.0)
+        if not paragraph_runs:
+            paragraph_runs = None
+            paragraph_space_before = []
+            visual_line_widths = []
+
+    if paragraph_runs is not None:
+        runs = [r for line in paragraph_runs for r in line]
+    else:
+        runs = _build_text_runs(elem, parent_attrs)
 
     if not runs:
         return None
@@ -975,8 +1121,23 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
         return None
 
     # Estimate text dimensions
-    text_width = estimate_text_width(full_text, font_size, font_weight) * 1.15
-    text_height = font_size * 1.5
+    if paragraph_runs is not None:
+        # Use the WIDEST visual line (per-tspan as the deck author drew it),
+        # not the joined-up paragraph: soft-broken paragraphs concatenate
+        # many lines into one <a:p>, and measuring the joined string would
+        # blow the textbox past the canvas.
+        text_width = max(visual_line_widths) if visual_line_widths else 0.0
+        # Total height assumes the visual line count from the SVG source;
+        # if PowerPoint wraps to more or fewer lines after the user resizes,
+        # the user resizes the height accordingly.
+        text_height = (
+            line_height_px * (len(visual_line_widths) - 1)
+            + sum(paragraph_space_before)
+            + font_size * 1.5
+        )
+    else:
+        text_width = estimate_text_width(full_text, font_size, font_weight) * 1.05
+        text_height = font_size * 1.5
     padding = font_size * 0.1
 
     # Adjust position based on text-anchor
@@ -990,6 +1151,28 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     box_y = y - font_size * 0.85
     box_w = text_width + padding * 2
     box_h = text_height + padding
+
+    text_transform = elem.get('transform', '')
+    if text_transform and 'rotate' not in text_transform and not ctx.use_transform_matrix:
+        try:
+            a, b, c, d, e, f = parse_transform_matrix(text_transform)
+        except Exception:
+            a, b, c, d, e, f = 1.0, 0.0, 0.0, 1.0, 0.0, 0.0
+        # A pure-translate transform on a text element (hand-authored, or written
+        # by a live-preview move) was otherwise ignored here, drifting the text.
+        # Absorb the translation into the frame position; a scaling transform
+        # would also need to scale font size / line metrics, so leave
+        # non-translate transforms alone.
+        if (
+            abs(a - 1.0) < 1e-9 and abs(b) < 1e-9
+            and abs(c) < 1e-9 and abs(d - 1.0) < 1e-9
+        ):
+            sx = ctx.scale_x or 1.0
+            sy = ctx.scale_y or 1.0
+            raw_box_x = (box_x - ctx.translate_x) / sx
+            raw_box_y = (box_y - ctx.translate_y) / sy
+            box_x = ctx.translate_x + sx * (a * raw_box_x + e)
+            box_y = ctx.translate_y + sy * (d * raw_box_y + f)
 
     # Letter spacing
     spc_attr = ''
@@ -1007,7 +1190,6 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     # box so its center lands where SVG would place the rotated visual center —
     # otherwise rotated y-axis labels etc. drift to the wrong location.
     text_rot = 0
-    text_transform = elem.get('transform', '')
     if text_transform:
         rot_match = re.search(
             r'rotate\(\s*([-\d.]+)(?:[\s,]+([-\d.]+)[\s,]+([-\d.]+))?',
@@ -1048,11 +1230,47 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     shape_id = ctx.next_id()
     rot_attr = f' rot="{text_rot}"' if text_rot else ''
 
-    runs_xml = '\n'.join(_build_run_xml(r, fonts, ctx, text_effect_xml) for r in runs)
+    if paragraph_runs is not None:
+        # SVG dy(px) -> hundredths-of-a-point: dy_pt = dy_px * 0.75, then x100.
+        line_spc_val = round(line_height_px * FONT_PX_TO_HUNDREDTHS_PT)
+        ln_spc_xml = f'<a:lnSpc><a:spcPts val="{line_spc_val}"/></a:lnSpc>'
+        paragraph_xml_chunks = []
+        for line, extra_px in zip(paragraph_runs, paragraph_space_before):
+            spc_bef_xml = ''
+            if extra_px > 0:
+                spc_bef_val = round(extra_px * FONT_PX_TO_HUNDREDTHS_PT)
+                spc_bef_xml = f'<a:spcBef><a:spcPts val="{spc_bef_val}"/></a:spcBef>'
+            runs_inner = '\n'.join(_build_run_xml(r, fonts, ctx, text_effect_xml) for r in line)
+            paragraph_xml_chunks.append(
+                f'<a:p>\n<a:pPr algn="{algn}">{ln_spc_xml}{spc_bef_xml}</a:pPr>\n'
+                f'{runs_inner}\n</a:p>'
+            )
+        paragraphs_xml = '\n'.join(paragraph_xml_chunks)
+    else:
+        runs_xml = '\n'.join(_build_run_xml(r, fonts, ctx, text_effect_xml) for r in runs)
+        paragraphs_xml = f'<a:p>\n<a:pPr algn="{algn}"/>\n{runs_xml}\n</a:p>'
+
     off_x = px_to_emu(box_x)
     off_y = px_to_emu(box_y)
     ext_cx = px_to_emu(box_w)
     ext_cy = px_to_emu(box_h)
+
+    # Paragraph mode: wrap="square" so text reflows when the user resizes,
+    # but NO spAutoFit — otherwise PowerPoint expands the frame to fit a
+    # long joined-up <a:p> on one line, blowing past the canvas. The cx we
+    # write below (longest SVG line) is the design target width;
+    # PowerPoint wraps long paragraphs inside this width.
+    # Single-line text keeps wrap="none" + spAutoFit for tight fidelity.
+    if paragraph_runs is not None:
+        body_pr_xml = (
+            '<a:bodyPr wrap="square" lIns="0" tIns="0" rIns="0" bIns="0" '
+            'anchor="t" anchorCtr="0"/>'
+        )
+    else:
+        body_pr_xml = (
+            '<a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" '
+            'anchor="t" anchorCtr="0">\n<a:spAutoFit/>\n</a:bodyPr>'
+        )
 
     return ShapeResult(xml=f'''<p:sp>
 <p:nvSpPr>
@@ -1068,14 +1286,9 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
 {shape_effect_xml}
 </p:spPr>
 <p:txBody>
-<a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" anchor="t" anchorCtr="0">
-<a:spAutoFit/>
-</a:bodyPr>
+{body_pr_xml}
 <a:lstStyle/>
-<a:p>
-<a:pPr algn="{algn}"/>
-{runs_xml}
-</a:p>
+{paragraphs_xml}
 </p:txBody>
 </p:sp>''', bounds_emu=(off_x, off_y, off_x + ext_cx, off_y + ext_cy))
 
@@ -1258,18 +1471,20 @@ def _picture_xfrm_from_rect(
     w: float,
     h: float,
 ) -> tuple[str, int, int, int, int, tuple[int, int, int, int]]:
-    """Build DrawingML xfrm data for a picture rectangle."""
+    """Build DrawingML xfrm data for a picture rectangle.
+
+    Coordinates ``x``, ``y``, ``w``, ``h`` MUST already be in ctx-resolved
+    space (i.e. callers have applied ``ctx_x`` / ``ctx_w`` upstream). When
+    ``ctx.use_transform_matrix`` is set, raw SVG-space coordinates are
+    expected and the matrix path applies the transform itself.
+    """
     if ctx.use_transform_matrix:
         return rect_to_dml_xfrm(x, y, w, h, ctx.transform_matrix)
 
-    x_t = ctx_x(x, ctx)
-    y_t = ctx_y(y, ctx)
-    w_t = ctx_w(w, ctx)
-    h_t = ctx_h(h, ctx)
-    off_x = px_to_emu(x_t)
-    off_y = px_to_emu(y_t)
-    ext_cx = px_to_emu(w_t)
-    ext_cy = px_to_emu(h_t)
+    off_x = px_to_emu(x)
+    off_y = px_to_emu(y)
+    ext_cx = px_to_emu(w)
+    ext_cy = px_to_emu(h)
     return '', off_x, off_y, ext_cx, ext_cy, (off_x, off_y, off_x + ext_cx, off_y + ext_cy)
 
 
@@ -1511,10 +1726,12 @@ def convert_image(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
 
     # Resolve preserveAspectRatio="<align> meet" by shrinking the picture
     # frame to match the image's aspect ratio. Skipped when a real clip-path
-    # is in effect: clip geometry is computed against the original-box
-    # coordinate space and would no longer line up after a frame shift.
-    has_clip = bool(elem.get('clip-path')) and elem.get('clip-path') != 'none'
-    meet_fit = None if has_clip else _resolve_image_meet_fit(elem, img_data, w, h)
+    # produces non-trivial geometry: such clip rectangles are defined against
+    # the original box and would no longer line up after a frame shift.
+    # A clip-path that resolves back to the default rect geometry (e.g. plain
+    # <rect> without rx/ry) is a no-op and must not block meet adjustment.
+    clip_is_noop = clip_geom == '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
+    meet_fit = None if not clip_is_noop else _resolve_image_meet_fit(elem, img_data, w, h)
 
     shape_id = ctx.next_id()
     if meet_fit is not None:

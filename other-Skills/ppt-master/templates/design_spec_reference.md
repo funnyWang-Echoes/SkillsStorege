@@ -34,7 +34,8 @@
 
 ### Theme Style
 
-- **Style**: {design_style}
+- **Mode**: [pyramid / narrative / instructional / showcase / briefing — narrative skeleton, locked at d Layer 1]
+- **Visual style**: [preset name or custom — aesthetic, locked at d Layer 2; carries no HEX]
 - **Theme**: [Light theme / Dark theme]
 - **Tone**: [Filled by Strategist, e.g., tech, professional, modern, innovative]
 
@@ -57,6 +58,15 @@
 | **Warning** | `#......` | Issue markers (red family) |
 
 > **Reference**: Industry colors in `references/strategist.md` or `scripts/config.py` under `INDUSTRY_COLORS`
+
+### AI Image Strategy (fill only when §VIII has `ai` rows)
+
+- **Image Rendering**: [one of the 20 names in `references/image-renderings/_index.md` (e.g. `vector-illustration`), or `custom`]
+- **Image Rendering Behavior**: [required when Rendering is `custom`; one-paragraph prose per `image-renderings/_index.md §1.5`]
+- **Image Palette**: [one of the 14 names in `references/image-palettes/_index.md` (e.g. `cool-corporate`), or `custom`]
+- **Image Palette Behavior**: [required when Palette is `custom`; one-paragraph prose per `image-palettes/_index.md §2`]
+
+> Strategist: lock these once per deck in h.5; every AI image inherits them. Cross-check the rendering × palette compatibility matrix in `image-palettes/_index.md` — avoid `✗` combinations (matrix only covers presets; when either dimension is `custom`, Strategist owns the compatibility judgment). Leave the section out entirely if §VIII has no `ai` rows. Omit the `Behavior` rows whenever the corresponding dimension is a preset name.
 
 ### Gradient Scheme (if needed, using SVG syntax)
 
@@ -136,6 +146,8 @@ Two views on the same font decisions — fill both, keep them consistent:
 
 > Sizes outside **every** band remain forbidden — surface the need and extend `spec_lock.md typography` (e.g., `cover_title: 96`) rather than invent a one-off value.
 
+> **Hero in single-focus / breathing pages**: when one element *is* the entire page — a large number, a headline, a key phrase — it is the visual subject, not body content. Such heroes may borrow the cover-title band (2.5–5×); for greater emphasis, declare a hero slot in `spec_lock.md` (e.g., `hero_number` / `hero_headline`) — checker exempts declared slots with no fixed upper limit. The row above "Hero number (consulting KPIs) 1.5–2×" applies only to numeric KPIs in dashboard/data layouts, not to full-page focal elements.
+
 ---
 
 ## V. Layout Principles
@@ -190,7 +202,7 @@ Two views on the same font decisions — fill both, keep them consistent:
 **Non-card containers** (naked text blocks / full-bleed imagery / divider-separated content — typical for `breathing` pages or minimalist designs):
 
 - Vertical rhythm carried by **whitespace**, not gutters — block gaps run wider than card gaps since there's no container edge to separate content.
-- **Line-height**: 1.4-1.6× body font size.
+- **Line-height**: ~1.4–1.5× for dense/small-body text (CLReq comfortable minimum); 1.6–2.0× for large-type, sparse, or `breathing` pages.
 - **Full-bleed text placement**: inset text away from the image's focal points; legibility over photographic backgrounds typically needs a gradient or opacity overlay.
 - **Content width** is driven by reading comfort and image composition, not a card grid slot — don't back-compute "column width" when there's no column.
 
@@ -213,42 +225,69 @@ Two views on the same font decisions — fill both, keep them consistent:
 
 ## VII. Visualization Reference List (if needed)
 
-> When the deck includes data visualization or infographic-style structured information, Strategist selects types from `templates/charts/charts_index.json` and lists them here for Executor reference. Path stays under `templates/charts/` for backward compatibility.
+> When pages map to a chart-library template (data charts OR structural patterns — team rosters, agendas, frameworks, etc.), Strategist lists them here for Executor reference. Single combined table — `summary-quote` column is the anti-fabrication audit, `path` + `usage` columns serve Executor lookup.
 
-**Read-audit** (mandatory):
+Catalog read: 71 templates
 
-```
-Catalog read: <N> templates / <M> categories
-Runners-up considered: <key_A> (rejected: <reason>), <key_B> (rejected: <reason>), <key_C> (rejected: <reason>)
-```
+| Page | Template | Path | Summary-quote (verbatim from `charts_index.json`) | Usage |
+| ---- | -------- | ---- | ------------------------------------------------- | ----- |
+| P05 | grouped_bar_chart | `templates/charts/grouped_bar_chart.svg` | "Pick for 2-4 series side-by-side across the same categories (e.g. YoY/QoQ). Skip if showing composition within each category (use stacked_bar_chart)." | YoY revenue comparison by product line |
 
-Runners-up must be genuine second-best matches for a page in this deck. If fewer than 3 viz pages exist, list what exists and note "fewer than 3 viz pages".
+**Runners-up considered** (3 entries minimum, drawn from real second-best matches in this deck):
 
-| Visualization Type | Reference Template | Used In |
-| ------------------ | ------------------ | ------- |
-| [e.g. grouped_bar_chart] | `templates/charts/grouped_bar_chart.svg` | Slide 05 |
+- `<key_A>` | rejected for P05: `<reason citing this deck's specifics>`
+- `<key_B>` | rejected for P##: `<reason>`
+- `<key_C>` | rejected for P##: `<reason>`
+
+> **Audit rule**: `Summary-quote` must be copy-pasted verbatim — paraphrasing breaks the audit. Every template name listed must `grep` cleanly inside `charts_index.json` (so misspellings/inventions fail). If fewer than 3 viz pages exist, list what exists and note "fewer than 3 viz pages"; runners-up still required for each page that does exist.
 
 ---
 
 ## VIII. Image Resource List (if needed)
 
-| Filename | Dimensions | Ratio | Purpose | Type | Status | Generation Description |
-| -------- | --------- | ----- | ------- | ---- | ------ | --------------------- |
-| cover_bg.png | {canvas_info['dimensions']} | [ratio] | Cover background | [Background/Photography/Illustration/Diagram/Decorative] | [Pending/Existing/Placeholder] | [AI generation prompt] |
+| Filename | Dimensions | Ratio | Purpose | Type | Layout pattern | Acquire Via | Status | Reference | text_policy | page_role |
+| -------- | --------- | ----- | ------- | ---- | -------------- | ----------- | ------ | --------- | ----------- | --------- |
+| cover_bg.png | {canvas_info['dimensions']} | [ratio] | Atmospheric cover backdrop — SVG title overlays the calm region | Background | #1 full-bleed background with floating title + #29 two-stop scrim | ai | Pending | [subject + intent + composition, no style/HEX] | none | hero_page |
+| comparison_p07.png | {canvas_info['dimensions']} | [ratio] | Three-panel approach comparison — panel labels stay inside the image | Diagram | #44 background image + native network/architecture diagram | ai | Pending | Three side-by-side schematic motifs comparing approach A / B / C, panel labels rendered inside each motif | embedded | local |
+| formula_001.png | [actual dimensions from formula manifest / image_analysis] | [ratio] | Block equation on P03 | Latex Formula | formula-block | formula | Rendered | `E = mc^2` — energy-mass equation | | |
+
+> **Layout pattern column is MANDATORY** — for non-formula rows, value is one or more `#<id> <name>` joined by ` + ` drawn verbatim from [`references/image-layout-patterns.md`](../references/image-layout-patterns.md) (Primary + optional Modifiers). Empty cells, paraphrased names, or invented ids invalidate the row. Formula rows are the only exception; use `formula-inline` or `formula-block`. See `strategist.md §h` GATE for the three-layer requirement (read → produce → image-as-canvas coverage).
+
+**Type** (free-form category tag; common values):
+
+- `Background` — cover / chapter / full-bleed atmosphere
+- `Photography` — real-world photo
+- `Illustration` — vector / flat / painterly art
+- `Diagram` — schematic / architecture / flowchart
+- `Portrait` — single-subject person
+- `Latex Formula` — formula PNG rendered by `latex_render.py`
 
 **Status**:
 
-- **Pending** — needs AI generation, provide description
+- **Pending** — needs AI generation or web sourcing
+- **Rendered** — deterministic formula asset already exists under `images/`
 - **Existing** — user-supplied, place in `images/`
 - **Placeholder** — not yet processed, use dashed border in SVG
 
-**Type** (used by Image_Generator for prompt strategy):
+**Acquire Via**:
 
-- **Background** — full-page (covers / chapters); reserve text area
-- **Photography** — real scenes, people, products, architecture
-- **Illustration** — flat / vector / cartoon / concept diagrams
-- **Diagram** — flowcharts, architecture diagrams, concept maps
-- **Decorative** — partial decorations, textures, borders, dividers
+- `ai` — Step 5 Image_Generator
+- `web` — Step 5 Image_Searcher
+- `formula` — already rendered by `latex_render.py` before this spec was written
+- `user` — user-supplied
+- `placeholder` — intentionally deferred
+
+**text_policy** (`ai` rows only; AI judges per row, no global default bias):
+
+- `none` — image carries no text; SVG overlays all labels
+- `embedded` — image contains in-artwork text: decorative lettering, a designed title, hand-lettered keywords, or stable visual identifiers (axis labels, subplot letters, unit symbols). Body copy / data points / long quotes never go inside the image regardless — they must stay editable. Embedded text is frozen into the raster, so the exact characters are named literally in the prompt
+
+**page_role** (`ai` rows only; leave blank for default):
+
+- *blank / `local`* — image is a region block on an SVG page
+- `hero_page` — image is the page's main voice; SVG overlay is minimal or empty. Use on covers, chapter dividers, mood transitions, single-number data heroes, closing quotes. Same rendering and palette as the rest of the deck regardless
+
+**Reference grammar** (`ai` rows): write **subject + intent + composition** only. Do NOT repeat style words ("flat design", "modern") or HEX values — both are already locked deck-wide by `design_spec §III AI Image Strategy` (rendering + palette) and `§III Color Scheme` (HEX triplet). Image_Generator's prompt assembler injects them.
 
 ---
 
@@ -267,11 +306,12 @@ Runners-up must be genuine second-best matches for a page in this deck. If fewer
 
 - **Layout**: [Choose a pattern from §V, combine two, or break the grid as the content demands]
 - **Title**: [Page title]
+- **Core message**: [the one thing this page exists to land — its spine, always phrased as one assertion sentence (prose by nature). One per page; can't name it → merge or cut the page.]
 - **Visualization**: [visualization_type] (see VII. Visualization Reference List)
-- **Content**:
-  - [Point 1]
-  - [Point 2]
-  - [Point 3]
+- **Content**: write each block in the phrasing that fits it (prose / bullet / keyword / … any phrasing the content calls for) and write it already in that mode, so the texture itself carries the intent — a prose block reads as a real sentence, not a fragment. One page may mix modes; blocks still sit under the core message, never replace it:
+  - [a connected sentence or two that argues the point]
+  - [parallel fragment] · [parallel fragment] · [parallel fragment]
+  - [label] / [label] / [label]
 
 > **Visualization field**: add only when the page has data visualization or structured infographic elements. Type must be listed in §VII.
 

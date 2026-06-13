@@ -44,6 +44,7 @@ from .txbody_to_svg import (
     convert_txbody,
     convert_vertical_txbody,
     is_vertical_txbody,
+    DEFAULT_FONT_SIZE_PX,
 )
 
 
@@ -314,17 +315,30 @@ def _convert_shape(node: ShapeNode, ctx: AssemblyContext, *, top_level: bool) ->
 
     # Text body (a:txBody)
     tx_body = node.xml.find("p:txBody", NS)
-    is_vertical = is_vertical_txbody(tx_body)
+    is_vertical = is_vertical_txbody(tx_body, node.xfrm)
+    text_default_fill = _resolve_text_style_default(node, ctx)
     if tx_body is not None and is_vertical:
         text_result = convert_vertical_txbody(
             tx_body, node.xfrm, ctx.palette,
             theme_fonts=ctx.theme_fonts,
+            default_fill=text_default_fill,
+            default_font_size_px=DEFAULT_FONT_SIZE_PX,
+            fallback_lst_styles=node.inherited_lst_styles,
+            id_prefix=f"{ctx.group_id_prefix}txt",
+            id_seq=ctx.grad_seq,
         )
     else:
         text_result = convert_txbody(
             tx_body, node.xfrm, ctx.palette,
             theme_fonts=ctx.theme_fonts,
+            default_fill=text_default_fill,
+            default_font_size_px=DEFAULT_FONT_SIZE_PX,
+            fallback_lst_styles=node.inherited_lst_styles,
+            id_prefix=f"{ctx.group_id_prefix}txt",
+            id_seq=ctx.grad_seq,
         ) if tx_body is not None else TextResult()
+    if text_result.defs:
+        ctx.defs.extend(text_result.defs)
 
     if is_vertical:
         # Vertical text: geometry + image in one group, text in separate group
@@ -387,11 +401,18 @@ def _build_geometry_xml(node: ShapeNode, sp_pr: ET.Element | None,
     if geom is None:
         return ""
 
+    # Resolve style defaults early so markers can adopt the theme stroke color
+    # when <a:ln> doesn't carry an explicit solidFill.
+    style_defaults = _resolve_shape_style_defaults(node, ctx)
+
     # Fill / stroke / effect
     fill = resolve_fill(sp_pr, ctx.palette,
                         id_prefix="g", id_seq=ctx.grad_seq)
-    stroke = resolve_stroke(sp_pr, ctx.palette,
-                            id_prefix="m", id_seq=ctx.marker_seq)
+    stroke = resolve_stroke(
+        sp_pr, ctx.palette,
+        id_prefix="m", id_seq=ctx.marker_seq,
+        style_stroke_default=style_defaults.get("stroke"),
+    )
     filter_id, effect_defs = convert_effects(sp_pr, ctx.palette,
                                              id_prefix="fx",
                                              id_seq=ctx.filter_seq)
@@ -401,7 +422,6 @@ def _build_geometry_xml(node: ShapeNode, sp_pr: ET.Element | None,
     ctx.defs.extend(effect_defs)
 
     attrs = {**fill.attrs, **stroke.attrs}
-    style_defaults = _resolve_shape_style_defaults(node, ctx)
     for key, value in style_defaults.items():
         attrs.setdefault(key, value)
     if filter_id is not None:
@@ -446,6 +466,16 @@ def _resolve_shape_style_defaults(node: ShapeNode, ctx: AssemblyContext) -> dict
         defaults.setdefault("stroke-width", "1")
 
     return defaults
+
+
+def _resolve_text_style_default(node: ShapeNode, ctx: AssemblyContext) -> str:
+    """Resolve p:style fontRef color used by runs without explicit fill."""
+    style = node.xml.find("p:style", NS)
+    if style is None:
+        return "#000000"
+    font_ref = style.find("a:fontRef", NS)
+    font_color = _resolve_ref_color(font_ref, ctx)
+    return font_color or "#000000"
 
 
 def _resolve_ref_color(ref_elem: ET.Element | None, ctx: AssemblyContext) -> str | None:

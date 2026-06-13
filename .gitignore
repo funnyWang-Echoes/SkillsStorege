@@ -12,6 +12,7 @@ __pycache__/
 tmp/
 temp/
 .tmp/
+.tmp-import/
 
 # Build/output artifacts
 dist/
