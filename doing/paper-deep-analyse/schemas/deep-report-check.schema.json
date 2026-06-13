@@ -1,0 +1,337 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "paper-deep-analyse report check",
+  "type": "object",
+  "required": [
+    "paper_slug",
+    "html_path",
+    "analysis_profile",
+    "profile_reason",
+    "thresholds_used",
+    "mineru_used",
+    "reading_cards",
+    "details_reading_cards",
+    "non_details_reading_cards",
+    "reading_cards_with_evidence_linkage",
+    "source_expanded_cards",
+    "reading_cards_with_translation_pairs",
+    "min_reading_card_chars",
+    "evidence_points",
+    "related_papers_in_body",
+    "formulas",
+    "figures_or_tables",
+    "evidence_embeds",
+    "mineru_local_images",
+    "reconstructed_table_evidence",
+    "rich_evidence_blocks",
+    "unrendered_markdown_images",
+    "unrendered_markdown_tables",
+    "custom_tables",
+    "code_blocks",
+    "mermaid_svg_nodes",
+    "katex_rendered_nodes",
+    "formula_render_errors",
+    "math_source_checked",
+    "render_check_method",
+    "method_section_chars",
+    "reading_section_chars",
+    "mechanism_blocks",
+    "min_mechanism_block_chars",
+    "max_excerpt_words",
+    "long_quote_risk",
+    "paper_references_dir_exists",
+    "report_md_path",
+    "report_md_generated_first",
+    "diagnostic_gate",
+    "doubt_items",
+    "contribution_claims",
+    "contribution_summary",
+    "subagent_review"
+  ],
+  "properties": {
+    "paper_slug": { "type": "string" },
+    "html_path": { "type": "string" },
+    "analysis_profile": { "type": "string", "enum": ["short", "standard", "long"] },
+    "profile_reason": {
+      "type": "string",
+      "minLength": 10,
+      "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+    },
+    "thresholds_used": {
+      "type": "object",
+      "required": [
+        "reading_cards",
+        "reading_card_chars",
+        "evidence_points",
+        "related_papers_in_body",
+        "formulas",
+        "evidence_embeds",
+        "mineru_local_images",
+        "reconstructed_table_evidence",
+        "method_section_chars",
+        "reading_section_chars",
+        "mechanism_blocks",
+        "mechanism_block_chars"
+      ],
+      "properties": {
+        "reading_cards": { "type": "integer", "minimum": 1 },
+        "reading_card_chars": { "type": "integer", "minimum": 120 },
+        "evidence_points": { "type": "integer", "minimum": 3 },
+        "related_papers_in_body": { "type": "integer", "minimum": 0 },
+        "formulas": { "type": "integer", "minimum": 0 },
+        "evidence_embeds": { "type": "integer", "minimum": 1 },
+        "mineru_local_images": { "type": "integer", "minimum": 0 },
+        "reconstructed_table_evidence": { "type": "integer", "minimum": 0 },
+        "method_section_chars": { "type": "integer", "minimum": 600 },
+        "reading_section_chars": { "type": "integer", "minimum": 800 },
+        "mechanism_blocks": { "type": "integer", "minimum": 1 },
+        "mechanism_block_chars": { "type": "integer", "minimum": 160 }
+      }
+    },
+    "mineru_used": { "type": "boolean" },
+    "reading_cards": { "type": "integer", "minimum": 1 },
+    "details_reading_cards": { "type": "integer", "minimum": 1 },
+    "non_details_reading_cards": { "type": "integer", "const": 0 },
+    "reading_cards_with_evidence_linkage": { "type": "integer", "minimum": 1 },
+    "source_expanded_cards": { "type": "integer", "minimum": 1 },
+    "reading_cards_with_translation_pairs": { "type": "integer", "minimum": 1 },
+    "min_reading_card_chars": { "type": "integer", "minimum": 120 },
+    "evidence_points": { "type": "integer", "minimum": 3 },
+    "related_papers_in_body": { "type": "integer", "minimum": 0 },
+    "formulas": { "type": "integer", "minimum": 0 },
+    "figures_or_tables": { "type": "integer", "minimum": 1 },
+    "evidence_embeds": { "type": "integer", "minimum": 1 },
+    "mineru_local_images": { "type": "integer", "minimum": 0 },
+    "reconstructed_table_evidence": { "type": "integer", "minimum": 0 },
+    "rich_evidence_blocks": { "type": "integer", "minimum": 1 },
+    "unrendered_markdown_images": { "type": "integer", "const": 0 },
+    "unrendered_markdown_tables": { "type": "integer", "const": 0 },
+    "custom_tables": { "type": "integer", "minimum": 1 },
+    "code_blocks": { "type": "integer", "minimum": 0 },
+    "mermaid_svg_nodes": { "type": "integer", "minimum": 1 },
+    "katex_rendered_nodes": { "type": "integer", "minimum": 0 },
+    "formula_render_errors": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 0
+    },
+    "math_source_checked": { "type": "boolean", "const": true },
+    "render_check_method": { "type": "string", "enum": ["playwright", "browser", "chrome-devtools"] },
+    "method_section_chars": { "type": "integer", "minimum": 600 },
+    "reading_section_chars": { "type": "integer", "minimum": 800 },
+    "mechanism_blocks": { "type": "integer", "minimum": 1 },
+    "min_mechanism_block_chars": { "type": "integer", "minimum": 160 },
+    "max_excerpt_words": { "type": "integer", "maximum": 25 },
+    "long_quote_risk": { "type": "boolean", "const": false },
+    "paper_references_dir_exists": { "type": "boolean", "const": false },
+    "report_md_path": { "type": "string", "pattern": "notes[/\\\\]report\\.md$" },
+    "report_md_generated_first": { "type": "boolean", "const": true },
+    "diagnostic_gate": {
+      "type": "object",
+      "required": ["performed", "decision", "iterations", "fatal_flaws", "adjustments"],
+      "properties": {
+        "performed": { "type": "boolean", "const": true },
+        "decision": { "type": "string", "enum": ["continue", "refocus", "downgrade-profile", "upgrade-profile", "block-and-repair"] },
+        "iterations": { "type": "integer", "minimum": 1 },
+        "fatal_flaws": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "adjustments": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "doubt_items": { "type": "integer", "minimum": 0 },
+    "contribution_claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "author_claim",
+          "source_location",
+          "independent_category",
+          "novelty_judgment",
+          "evidence",
+          "caveat_or_doubt"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^C[0-9]{2,}$" },
+          "author_claim": {
+            "type": "string",
+            "minLength": 8,
+            "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+          },
+          "source_location": {
+            "type": "string",
+            "minLength": 3,
+            "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+          },
+          "independent_category": {
+            "type": "string",
+            "enum": ["真创新", "工程改进", "应用整合", "实验验证", "表述包装", "存疑"]
+          },
+          "novelty_judgment": {
+            "type": "string",
+            "minLength": 8,
+            "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 3,
+            "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+          },
+          "caveat_or_doubt": {
+            "type": "string",
+            "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+          }
+        }
+      }
+    },
+    "contribution_summary": {
+      "type": "object",
+      "required": [
+        "total",
+        "true_innovation",
+        "engineering_improvement",
+        "application_integration",
+        "experiment_validation",
+        "repackaging",
+        "uncertain"
+      ],
+      "properties": {
+        "total": { "type": "integer", "minimum": 1 },
+        "true_innovation": { "type": "integer", "minimum": 0 },
+        "engineering_improvement": { "type": "integer", "minimum": 0 },
+        "application_integration": { "type": "integer", "minimum": 0 },
+        "experiment_validation": { "type": "integer", "minimum": 0 },
+        "repackaging": { "type": "integer", "minimum": 0 },
+        "uncertain": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "image_paths_missing": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 0
+    },
+    "manual_fields_required": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 0
+    },
+    "subagent_review": {
+      "type": "object",
+      "required": ["attempted", "supported", "model", "verdict", "result", "findings_count"],
+      "properties": {
+        "attempted": { "type": "boolean" },
+        "supported": { "type": "boolean" },
+        "model": { "type": "string", "const": "gpt-5.4-mini" },
+        "verdict": { "type": "string", "enum": ["pass", "fail", "pass-with-issues", "unsupported"] },
+        "result": {
+          "type": "string",
+          "minLength": 40,
+          "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+        },
+        "findings_count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "analysis_profile": { "const": "short" } } },
+      "then": {
+        "properties": {
+          "reading_cards": { "minimum": 4 },
+          "source_expanded_cards": { "minimum": 4 },
+          "reading_cards_with_translation_pairs": { "minimum": 4 },
+          "evidence_points": { "minimum": 6 },
+          "related_papers_in_body": { "minimum": 2 },
+          "formulas": { "minimum": 1 },
+          "evidence_embeds": { "minimum": 2 },
+          "rich_evidence_blocks": { "minimum": 2 },
+          "reconstructed_table_evidence": { "minimum": 1 },
+          "method_section_chars": { "minimum": 900 },
+          "reading_section_chars": { "minimum": 1200 },
+          "mechanism_blocks": { "minimum": 1 },
+          "min_mechanism_block_chars": { "minimum": 220 }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "analysis_profile": { "const": "standard" } } },
+      "then": {
+        "properties": {
+          "reading_cards": { "minimum": 6 },
+          "source_expanded_cards": { "minimum": 6 },
+          "reading_cards_with_translation_pairs": { "minimum": 6 },
+          "evidence_points": { "minimum": 9 },
+          "related_papers_in_body": { "minimum": 4 },
+          "formulas": { "minimum": 3 },
+          "evidence_embeds": { "minimum": 3 },
+          "rich_evidence_blocks": { "minimum": 3 },
+          "mineru_local_images": { "minimum": 1 },
+          "reconstructed_table_evidence": { "minimum": 1 },
+          "method_section_chars": { "minimum": 1500 },
+          "reading_section_chars": { "minimum": 2200 },
+          "mechanism_blocks": { "minimum": 2 },
+          "min_mechanism_block_chars": { "minimum": 280 }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "analysis_profile": { "const": "long" } } },
+      "then": {
+        "properties": {
+          "reading_cards": { "minimum": 8 },
+          "source_expanded_cards": { "minimum": 8 },
+          "reading_cards_with_translation_pairs": { "minimum": 8 },
+          "evidence_points": { "minimum": 12 },
+          "related_papers_in_body": { "minimum": 6 },
+          "formulas": { "minimum": 5 },
+          "evidence_embeds": { "minimum": 4 },
+          "rich_evidence_blocks": { "minimum": 4 },
+          "mineru_local_images": { "minimum": 2 },
+          "reconstructed_table_evidence": { "minimum": 2 },
+          "method_section_chars": { "minimum": 2200 },
+          "reading_section_chars": { "minimum": 3200 },
+          "mechanism_blocks": { "minimum": 3 },
+          "min_mechanism_block_chars": { "minimum": 320 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "subagent_review": {
+            "properties": { "supported": { "const": true } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "subagent_review": {
+            "properties": {
+              "attempted": { "const": true },
+              "verdict": { "enum": ["pass", "fail", "pass-with-issues"] },
+              "findings_count": { "minimum": 3 }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "subagent_review": {
+            "properties": { "verdict": { "const": "unsupported" } }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -4,6 +4,7 @@
 
 - `my-Skills/`：我自己维护或深度改造的 Skill。
 - `other-Skills/`：从他人 GitHub 或外部来源整理来的 Skill，只保留可直接使用的 Skill 本体。
+- `doing/`：正在优化中的 Skill 工作副本，优化完成后再替换回 `my-Skills/` 或 `other-Skills/`。
 
 整理原则见 [AGENTS.md](AGENTS.md)。核心规则是：外部仓库下载后先分析来源，再剥离外层，只保留包含 `SKILL.md` 的真实 Skill 目录；来源、作用、可用程度统一记录在本文件。
 
@@ -14,6 +15,8 @@ my-Skills/
   agent-trajectory-analysis/
   paper-deep-analyse/
   sim-agent-research/
+doing/
+  paper-deep-analyse/
 other-Skills/
   aihot/
   beautiful-article/
@@ -32,9 +35,9 @@ other-Skills/
 
 | Skill | 作用 | 来源 | 可用程度 |
 |---|---|---|---|
-| `paper-deep-analyse` | 对论文做逐段精读、论证链重建、实验/代码审计、相关工作发散，并生成 HTML 深度报告。 | 本地自维护：`C:\Users\funnyWang\.codex\skills\paper-deep-analyse` | 可用但仍不够满意；当前规则很重，后续需要继续打磨报告质量、流程负担和自检体验。 |
-| `sim-agent-research` | 调研仿真软件的 Agent 化生态，包括接口、MCP、Skill、论文、接入难度和可用性复核。 | 本地自维护：`C:\Users\funnyWang\.codex\skills\sim-agent-research` | 较可用；适合系统性调研，但执行成本较高，依赖联网检索质量。 |
-| `agent-trajectory-analysis` | 分析 Agent 实验轨迹日志，按阶段复盘工具调用、关键结果、失败点和改进方向。 | 本地自维护：`C:\Users\funnyWang\.codex\skills\agent-trajectory-analysis` | 可用；偏分析模板型，适合 JSON/JSONL 轨迹复盘。 |
+| `paper-deep-analyse` | 对论文做逐段精读、论证链重建、实验/代码审计、相关工作发散，并生成 HTML 深度报告。 | 自有维护版本 | 可用但仍不够满意；当前规则很重，后续需要继续打磨报告质量、流程负担和自检体验。当前优化副本在 `doing/paper-deep-analyse/`。 |
+| `sim-agent-research` | 调研仿真软件的 Agent 化生态，包括接口、MCP、Skill、论文、接入难度和可用性复核。 | 自有维护版本 | 较可用；适合系统性调研，但执行成本较高，依赖联网检索质量。 |
+| `agent-trajectory-analysis` | 分析 Agent 实验轨迹日志，按阶段复盘工具调用、关键结果、失败点和改进方向。 | 自有维护版本 | 可用；偏分析模板型，适合 JSON/JSONL 轨迹复盘。 |
 
 ## 他人 / 外部 Skills
 
@@ -69,4 +72,5 @@ other-Skills/
 ## 后续待办
 
 - 后续每新增一个外部 Skill，都先记录来源再删除外层仓库壳。
+- 在 `doing/paper-deep-analyse/` 中继续优化 `paper-deep-analyse`，满意后再替换正式目录。
 - 持续评估 `paper-deep-analyse` 的满意度，尤其是报告质量、执行成本和自检流程。
