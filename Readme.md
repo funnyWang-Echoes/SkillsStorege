@@ -5,6 +5,7 @@
 - `my-Skills/`：我自己维护或深度改造的 Skill。
 - `other-Skills/`：从他人 GitHub 或外部来源整理来的 Skill，只保留可直接使用的 Skill 本体。
 - `doing/`：正在优化中的 Skill 工作副本，优化完成后再替换回 `my-Skills/` 或 `other-Skills/`。
+- `myAgentsMD/`：我自己的跨设备 Agent 指令文件，用于迁移和同步个人协作偏好；它不是 Skill 目录，不要求包含 `SKILL.md`。
 
 整理原则见 [AGENTS.md](AGENTS.md)。核心规则是：外部仓库下载后先分析来源，再剥离外层，只保留包含 `SKILL.md` 的真实 Skill 目录；来源、作用、可用程度统一记录在本文件。
 
@@ -15,8 +16,11 @@ my-Skills/
   agent-trajectory-analysis/
   paper-deep-analyse/
   sim-agent-research/
+  workspace-bootstrap/
 doing/
   paper-deep-analyse/
+myAgentsMD/
+  AGENTS.md
 other-Skills/
   aihot/
   beautiful-article/
@@ -31,6 +35,10 @@ other-Skills/
   web-video-presentation/
 ```
 
+## 个人 Agent 指令
+
+`myAgentsMD/` 用来保存我自己的 Agent 协作规则，当前包含 `AGENTS.md`。这个目录的目标是方便换设备时迁移和持续更新个人默认指令，不作为可安装 Skill 管理，因此不适用“每个 Skill 目录必须直接包含 `SKILL.md`”的检查规则。
+
 ## 我自己的 Skills
 
 | Skill | 作用 | 来源 | 可用程度 |
@@ -38,6 +46,7 @@ other-Skills/
 | `paper-deep-analyse` | 对论文做逐段精读、论证链重建、实验/代码审计、相关工作发散，并生成 HTML 深度报告。 | 自有维护版本 | 可用但仍不够满意；当前规则很重，后续需要继续打磨报告质量、流程负担和自检体验。当前优化副本在 `doing/paper-deep-analyse/`。 |
 | `sim-agent-research` | 调研仿真软件的 Agent 化生态，包括接口、MCP、Skill、论文、接入难度和可用性复核。 | 自有维护版本 | 较可用；适合系统性调研，但执行成本较高，依赖联网检索质量。 |
 | `agent-trajectory-analysis` | 分析 Agent 实验轨迹日志，按阶段复盘工具调用、关键结果、失败点和改进方向。 | 自有维护版本 | 可用；偏分析模板型，适合 JSON/JSONL 轨迹复盘。 |
+| `workspace-bootstrap` | 快速创建或整理开发、科研、混合型工作空间，生成项目级 `AGENTS.md`、标准目录和可持久化任务状态系统。 | 自有维护版本 | 草稿可用；当前为 0.4 测试版，已完成 `testing/PaperReadingProject` 现有项目、空科研 workspace 和空开发 workspace 生成测试，重点强化 `.gitignore`、Do Not Touch 边界、任务真源复用、嵌套 AGENTS 和空项目命令诚实性。 |
 
 ## 他人 / 外部 Skills
 

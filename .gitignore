@@ -26,3 +26,6 @@ papers/
 projects/
 exports/
 backup/
+
+# Local test fixtures
+/testing/
