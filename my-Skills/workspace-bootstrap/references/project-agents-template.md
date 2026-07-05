@@ -2,6 +2,8 @@
 
 Use this reference when generating a project-level `AGENTS.md`. The generated file should be short, concrete, and specific to the workspace. It is a project contract, not a copy of the user's global preferences.
 
+Default output language: Chinese. Generate `AGENTS.md`, `README.md`, task files, and docs entry files in Chinese by default. Use English only when the user explicitly asks for English or the project already has a clear English/open-source collaboration context. The English examples in this reference are structural examples; translate headings and body text into Chinese for the default personal-workspace flow.
+
 ## What To Downscope From Personal Rules
 
 Include these rules when relevant:

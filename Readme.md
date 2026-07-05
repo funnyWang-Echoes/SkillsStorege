@@ -46,7 +46,7 @@ other-Skills/
 | `paper-deep-analyse` | 对论文做逐段精读、论证链重建、实验/代码审计、相关工作发散，并生成 HTML 深度报告。 | 自有维护版本 | 可用但仍不够满意；当前规则很重，后续需要继续打磨报告质量、流程负担和自检体验。当前优化副本在 `doing/paper-deep-analyse/`。 |
 | `sim-agent-research` | 调研仿真软件的 Agent 化生态，包括接口、MCP、Skill、论文、接入难度和可用性复核。 | 自有维护版本 | 较可用；适合系统性调研，但执行成本较高，依赖联网检索质量。 |
 | `agent-trajectory-analysis` | 分析 Agent 实验轨迹日志，按阶段复盘工具调用、关键结果、失败点和改进方向。 | 自有维护版本 | 可用；偏分析模板型，适合 JSON/JSONL 轨迹复盘。 |
-| `workspace-bootstrap` | 快速创建或整理开发、科研、混合型工作空间，生成项目级 `AGENTS.md`、标准目录和可持久化任务状态系统。 | 自有维护版本 | 草稿可用；当前为 0.4 测试版，已完成 `testing/PaperReadingProject` 现有项目、空科研 workspace 和空开发 workspace 生成测试，重点强化 `.gitignore`、Do Not Touch 边界、任务真源复用、嵌套 AGENTS 和空项目命令诚实性。 |
+| `workspace-bootstrap` | 快速创建或整理开发、科研、混合型工作空间，生成项目级 `AGENTS.md`、标准目录和可持久化任务状态系统。 | 自有维护版本 | 草稿可用；当前为 0.4.1 测试版，已完成 `testing/PaperReadingProject` 现有项目、空科研 workspace 和空开发 workspace 生成测试；默认生成中文 `AGENTS.md`/README/任务文档，重点强化 `.gitignore`、Do Not Touch 边界、任务真源复用、嵌套 AGENTS 和空项目命令诚实性。 |
 
 ## 他人 / 外部 Skills
 

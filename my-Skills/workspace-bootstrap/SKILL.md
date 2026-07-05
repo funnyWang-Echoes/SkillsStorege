@@ -4,7 +4,7 @@ description: |
   快速创建或整理开发、科研、混合型工作空间。用于初始化项目目录、生成项目级 AGENTS.md、建立 README/docs/tasks/runs/outputs 等工作区契约，或诊断“目录很乱”的现有项目。用户提到搭建 workspace、初始化科研项目、整理项目结构、补项目级 AGENTS、任务追踪目录、todo/done 阶段管理、开发/论文/实验工作区时应触发。整理现有项目时必须先只读扫描并给出迁移计划，确认后再编辑，不自动移动或删除用户文件。
 metadata:
   type: project
-  version: 0.4.0
+  version: 0.4.1
   created: 2026-07-05
   updated: 2026-07-05
   references:
@@ -29,6 +29,7 @@ metadata:
 ## 基本原则
 
 - 新项目可以直接创建骨架；已有项目先只读诊断，再让用户确认改动。
+- 默认用中文生成项目级 `AGENTS.md`、`README.md`、任务说明和 docs 入口；只有用户明确要求英文，或项目已有英文协作/开源语境时，才生成英文。
 - 项目级 `AGENTS.md` 写项目契约，不整包复制个人全局偏好。
 - 目录设计要少而稳定。不要在根目录平铺 `todo1/`、`todo2/`、`done1/` 这类弱语义目录。
 - 原始数据、论文、用户材料、运行数据和生成输出必须有明确边界。
@@ -131,7 +132,7 @@ outputs/
 
 已有项目默认走最小契约：优先创建或更新根 `AGENTS.md`，必要时补 `docs/index.md` 或 `tasks/README.md` 指向现有任务真源。不要默认创建完整 `tasks/` 状态机、`docs/contracts/`、`runs/`、`outputs/`，除非用户明确要本地任务状态机或输出边界目录。
 
-对已有项目，不要覆盖已有 README、AGENTS、TODO 或 registry。若文件已存在，先读取并提出补丁式更新。
+对已有项目，不要覆盖已有 README、AGENTS、TODO 或 registry。若文件已存在，先读取并提出补丁式更新。新增或重写 `AGENTS.md`、`README.md`、`tasks/README.md`、任务文件和 docs 入口时默认使用中文；若已有文件主体为英文，则沿用项目现有语言并说明原因。
 
 ### 6. 验证
 
