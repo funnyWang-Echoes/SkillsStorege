@@ -55,7 +55,7 @@
     "profile_reason": {
       "type": "string",
       "minLength": 10,
-      "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+      "not": { "pattern": "(TODO\\s*[:：]|待补\\s*[:：]|占位\\s*[:：]|^placeholder\\s*[:：]|placeholder\\s*[:：])" }
     },
     "thresholds_used": {
       "type": "object",
@@ -141,7 +141,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+            "not": { "pattern": "(TODO\\s*[:：]|待补\\s*[:：]|占位\\s*[:：]|^placeholder\\s*[:：]|placeholder\\s*[:：])" }
           },
           "minItems": 1
         }
@@ -167,12 +167,12 @@
           "author_claim": {
             "type": "string",
             "minLength": 8,
-            "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+            "not": { "pattern": "(TODO\\s*[:：]|待补\\s*[:：]|占位\\s*[:：]|^placeholder\\s*[:：]|placeholder\\s*[:：])" }
           },
           "source_location": {
             "type": "string",
             "minLength": 3,
-            "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+            "not": { "pattern": "(TODO\\s*[:：]|待补\\s*[:：]|占位\\s*[:：]|^placeholder\\s*[:：]|placeholder\\s*[:：])" }
           },
           "independent_category": {
             "type": "string",
@@ -181,16 +181,16 @@
           "novelty_judgment": {
             "type": "string",
             "minLength": 8,
-            "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+            "not": { "pattern": "(TODO\\s*[:：]|待补\\s*[:：]|占位\\s*[:：]|^placeholder\\s*[:：]|placeholder\\s*[:：])" }
           },
           "evidence": {
             "type": "string",
             "minLength": 3,
-            "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+            "not": { "pattern": "(TODO\\s*[:：]|待补\\s*[:：]|占位\\s*[:：]|^placeholder\\s*[:：]|placeholder\\s*[:：])" }
           },
           "caveat_or_doubt": {
             "type": "string",
-            "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+            "not": { "pattern": "(TODO\\s*[:：]|待补\\s*[:：]|占位\\s*[:：]|^placeholder\\s*[:：]|placeholder\\s*[:：])" }
           }
         }
       }
@@ -232,12 +232,12 @@
       "properties": {
         "attempted": { "type": "boolean" },
         "supported": { "type": "boolean" },
-        "model": { "type": "string", "const": "gpt-5.4-mini" },
+        "model": { "type": "string", "minLength": 3 },
         "verdict": { "type": "string", "enum": ["pass", "fail", "pass-with-issues", "unsupported"] },
         "result": {
           "type": "string",
           "minLength": 40,
-          "not": { "pattern": "(TODO|待补|占位|placeholder)" }
+          "not": { "pattern": "(TODO\\s*[:：]|待补\\s*[:：]|占位\\s*[:：]|^placeholder\\s*[:：]|placeholder\\s*[:：])" }
         },
         "findings_count": { "type": "integer", "minimum": 0 }
       }

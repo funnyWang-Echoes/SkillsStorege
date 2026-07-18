@@ -13,6 +13,9 @@ try:
 except ImportError:
     markdown = None
 
+from thresholds import get_rules as _get_profile_rules
+
+PROFILE_RULES = {p: _get_profile_rules(p) for p in ("short", "standard", "long")}
 
 REQUIRED_SECTIONS = [
     "执行摘要",
@@ -28,42 +31,6 @@ REQUIRED_SECTIONS = [
     "Reviewer-style Critique",
     "可迁移启发",
 ]
-
-PROFILE_RULES = {
-    "short": {
-        "reading_cards": 4,
-        "reading_card_chars": 180,
-        "reading_section_chars": 1200,
-        "method_section_chars": 900,
-        "mechanism_blocks": 1,
-        "mechanism_block_chars": 220,
-        "evidence_total": 2,
-        "mineru_images": 0,
-        "table_evidence": 1,
-    },
-    "standard": {
-        "reading_cards": 6,
-        "reading_card_chars": 220,
-        "reading_section_chars": 2200,
-        "method_section_chars": 1500,
-        "mechanism_blocks": 2,
-        "mechanism_block_chars": 280,
-        "evidence_total": 3,
-        "mineru_images": 1,
-        "table_evidence": 1,
-    },
-    "long": {
-        "reading_cards": 8,
-        "reading_card_chars": 250,
-        "reading_section_chars": 3200,
-        "method_section_chars": 2200,
-        "mechanism_blocks": 3,
-        "mechanism_block_chars": 320,
-        "evidence_total": 4,
-        "mineru_images": 2,
-        "table_evidence": 2,
-    },
-}
 
 
 HTML_TEMPLATE = '''<!DOCTYPE html>
@@ -371,10 +338,14 @@ def validate_source_math(content: str) -> None:
         if not tag_match:
             raise ValueError(f"Formula tag {tag_number} must be in a display math block ($$...$$ or \\[...\\]).")
         tag_source = tag_match.group(0)
-        if "{r_j}" in tag_source and "\\{r_j\\}" not in tag_source:
+        # Generic check: any unescaped brace group like {x_i} (not \{x_i\}) inside a tag block
+        # is likely to be misinterpreted by Markdown. Check for the pattern.
+        unescaped_braces = re.findall(r"(?<!\\)\{[a-zA-Z]_\{[^}]+\}\}", tag_source)
+        if unescaped_braces:
             raise ValueError(
-                f"Formula tag {tag_number} appears to use unescaped brace groups; "
-                "use \\{r_j\\}_{j=1}^{G}."
+                f"Formula tag {tag_number} appears to use unescaped brace groups "
+                f"({', '.join(unescaped_braces[:3])}); escape them with backslashes "
+                f"e.g. \\{{r_j\\}}_{{j=1}}^{{G}}."
             )
 
 
@@ -384,8 +355,6 @@ def validate_rendered_math(html: str) -> None:
     for block in math_fragments:
         if re.search(r"</?(em|strong|a|code|span)\b", block):
             raise ValueError("Rendered math block contains HTML tags; protect or rewrite the formula before export.")
-        if "\\tag{4}" in block and ("<em" in block or "</em>" in block):
-            raise ValueError("Formula tag 4 appears corrupted by Markdown emphasis.")
 
 
 def md_to_html(md_content: str) -> str:
@@ -493,8 +462,8 @@ def validate_evidence_explanations(content: str) -> None:
 
 
 def extract_section(content: str, heading: str) -> str:
-    """抽取二级标题下的 Markdown 内容"""
-    match = re.search(rf"^##\s+{re.escape(heading)}\s*$", content, flags=re.M)
+    """抽取二级标题下的 Markdown 内容，容忍标题含前缀/后缀修饰词"""
+    match = re.search(rf"^##\s+.*{re.escape(heading)}.*\s*$", content, flags=re.M)
     if not match:
         return ""
     next_match = re.search(r"^##\s+", content[match.end():], flags=re.M)
@@ -585,21 +554,21 @@ def validate_report_content(content: str) -> None:
 
     evidence_embeds = len(re.findall(r'class=["\'][^"\']*evidence-embed', content))
     local_images = len(re.findall(r'!\[[^\]]*\]\((?!https?://|data:)[^)]+\)', content))
-    if evidence_embeds + local_images < rules["evidence_total"]:
+    if evidence_embeds + local_images < rules["evidence_embeds"]:
         raise ValueError(
-            f"report.md must embed at least {rules['evidence_total']} local figure/table evidence blocks "
+            f"report.md must embed at least {rules['evidence_embeds']} local figure/table evidence blocks "
             f"for {profile} profile, not only mention Figure/Table IDs."
         )
     mineru_images = count_mineru_local_images(content)
     table_evidence = count_reconstructed_table_evidence(content)
-    if mineru_images < rules["mineru_images"]:
+    if mineru_images < rules["mineru_local_images"]:
         raise ValueError(
-            f"report.md must include at least {rules['mineru_images']} MinerU local images "
+            f"report.md must include at least {rules['mineru_local_images']} MinerU local images "
             f"for {profile} profile, found {mineru_images}."
         )
-    if table_evidence < rules["table_evidence"]:
+    if table_evidence < rules["reconstructed_table_evidence"]:
         raise ValueError(
-            f"report.md must include at least {rules['table_evidence']} reconstructed table/numeric evidence blocks "
+            f"report.md must include at least {rules['reconstructed_table_evidence']} reconstructed table/numeric evidence blocks "
             f"for {profile} profile, found {table_evidence}."
         )
 

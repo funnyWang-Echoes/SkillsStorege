@@ -7,11 +7,15 @@ import sys
 import json
 from pathlib import Path
 
+from thresholds import get_rules as _get_profile_rules
 
 PROFILE_RULES = {
-    "short": {"katex_nodes": 1, "reading_cards": 4, "evidence_blocks": 2},
-    "standard": {"katex_nodes": 3, "reading_cards": 6, "evidence_blocks": 3},
-    "long": {"katex_nodes": 5, "reading_cards": 8, "evidence_blocks": 4},
+    p: {
+        "katex_nodes": _get_profile_rules(p).get("katex_nodes", 1),
+        "reading_cards": _get_profile_rules(p)["reading_cards"],
+        "evidence_blocks": _get_profile_rules(p)["evidence_embeds"],
+    }
+    for p in ("short", "standard", "long")
 }
 
 

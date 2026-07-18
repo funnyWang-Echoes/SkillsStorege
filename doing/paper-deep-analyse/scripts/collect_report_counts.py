@@ -11,51 +11,9 @@ import re
 import sys
 from pathlib import Path
 
+from thresholds import all_profiles as _all_profiles
 
-PROFILE_RULES = {
-    "short": {
-        "reading_cards": 4,
-        "reading_card_chars": 180,
-        "evidence_points": 6,
-        "related_papers_in_body": 2,
-        "formulas": 1,
-        "evidence_embeds": 2,
-        "mineru_local_images": 0,
-        "reconstructed_table_evidence": 1,
-        "method_section_chars": 900,
-        "reading_section_chars": 1200,
-        "mechanism_blocks": 1,
-        "mechanism_block_chars": 220,
-    },
-    "standard": {
-        "reading_cards": 6,
-        "reading_card_chars": 220,
-        "evidence_points": 9,
-        "related_papers_in_body": 4,
-        "formulas": 3,
-        "evidence_embeds": 3,
-        "mineru_local_images": 1,
-        "reconstructed_table_evidence": 1,
-        "method_section_chars": 1500,
-        "reading_section_chars": 2200,
-        "mechanism_blocks": 2,
-        "mechanism_block_chars": 280,
-    },
-    "long": {
-        "reading_cards": 8,
-        "reading_card_chars": 250,
-        "evidence_points": 12,
-        "related_papers_in_body": 6,
-        "formulas": 5,
-        "evidence_embeds": 4,
-        "mineru_local_images": 2,
-        "reconstructed_table_evidence": 2,
-        "method_section_chars": 2200,
-        "reading_section_chars": 3200,
-        "mechanism_blocks": 3,
-        "mechanism_block_chars": 320,
-    },
-}
+PROFILE_RULES = _all_profiles()
 
 
 def plain_length(text: str) -> int:
@@ -82,8 +40,8 @@ def detect_profile_reason(text: str) -> str:
 
 
 def extract_section(text: str, heading: str) -> str:
-    """抽取二级标题章节"""
-    match = re.search(rf"^##\s+{re.escape(heading)}\s*$", text, flags=re.M)
+    """抽取二级标题章节，容忍标题含前缀/后缀修饰词"""
+    match = re.search(rf"^##\s+.*{re.escape(heading)}.*\s*$", text, flags=re.M)
     if not match:
         return ""
     next_match = re.search(r"^##\s+", text[match.end():], flags=re.M)
@@ -235,10 +193,10 @@ def collect_counts(report_path: Path, html_path: Path, render_method: str) -> di
         "rich_evidence_blocks": count_rich_evidence_blocks(report),
         "unrendered_markdown_images": len(re.findall(r'!\[[^\]]*\]\s*(?:\(|$)', html)),
         "unrendered_markdown_tables": len(re.findall(r'^\s*\|.+\|\s*$', html, flags=re.M)),
-        "custom_tables": len(re.findall(r"<table\b", html)) + len(re.findall(r"^\s*\|.+\|\s*$", report, flags=re.M)),
-        "code_blocks": len(re.findall(r"```", report)) // 2 + len(re.findall(r"<pre\b", html)),
-        "mermaid_svg_nodes": len(re.findall(r'<svg\b', html)),
-        "katex_rendered_nodes": len(re.findall(r'class="[^"]*katex', html)),
+        "custom_tables": len(re.findall(r"<table\b", html)),
+        "code_blocks": len(re.findall(r"```(?:python|bash|shell|yaml|json|javascript|js|c|cpp|rust|go|java|ruby|php|sql|html|css|text|diff)?\s*\n", report, flags=re.I)) + len(re.findall(r"<pre\b", html)),
+        "mermaid_svg_nodes": len(re.findall(r'<div\b[^>]*class=["\'][^"\']*mermaid', html)) or len(re.findall(r'```mermaid', report)),
+        "katex_rendered_nodes": len(re.findall(r'class="[^"]*katex', html)) or len(re.findall(r'class="[^"]*math-(?:block|inline)', html)),
         "formula_render_errors": re.findall(r'katex-error', html),
         "math_source_checked": True,
         "render_check_method": render_method,

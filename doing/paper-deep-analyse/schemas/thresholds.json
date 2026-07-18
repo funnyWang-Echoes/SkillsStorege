@@ -1,0 +1,48 @@
+{
+  "_comment": "Single source of truth for analysis_profile thresholds. All scripts and schema must reference these values. Do NOT duplicate thresholds in generate_html.py, collect_report_counts.py, check_html_render.py, or deep-report-check.schema.json.",
+  "short": {
+    "reading_cards": 4,
+    "reading_card_chars": 180,
+    "evidence_points": 6,
+    "related_papers_in_body": 2,
+    "formulas": 1,
+    "evidence_embeds": 2,
+    "mineru_local_images": 0,
+    "reconstructed_table_evidence": 1,
+    "method_section_chars": 900,
+    "reading_section_chars": 1200,
+    "mechanism_blocks": 1,
+    "mechanism_block_chars": 220,
+    "katex_nodes": 1
+  },
+  "standard": {
+    "reading_cards": 6,
+    "reading_card_chars": 220,
+    "evidence_points": 9,
+    "related_papers_in_body": 4,
+    "formulas": 3,
+    "evidence_embeds": 3,
+    "mineru_local_images": 1,
+    "reconstructed_table_evidence": 1,
+    "method_section_chars": 1500,
+    "reading_section_chars": 2200,
+    "mechanism_blocks": 2,
+    "mechanism_block_chars": 280,
+    "katex_nodes": 3
+  },
+  "long": {
+    "reading_cards": 8,
+    "reading_card_chars": 250,
+    "evidence_points": 12,
+    "related_papers_in_body": 6,
+    "formulas": 5,
+    "evidence_embeds": 4,
+    "mineru_local_images": 2,
+    "reconstructed_table_evidence": 2,
+    "method_section_chars": 2200,
+    "reading_section_chars": 3200,
+    "mechanism_blocks": 3,
+    "mechanism_block_chars": 320,
+    "katex_nodes": 5
+  }
+}

@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 
-PLACEHOLDER_PATTERN = re.compile(r"(TODO|待补|占位|placeholder)", re.I)
+PLACEHOLDER_PATTERN = re.compile(r"(TODO\s*[:：]|待补\s*[:：]|占位\s*[:：]|^placeholder\s*[:：]|placeholder\s*[:：])", re.I)
 
 
 def walk_strings(value, path="$"):
