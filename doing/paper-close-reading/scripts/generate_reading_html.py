@@ -25,46 +25,173 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
 <script defer src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <style>
 :root {{
-  --text:#202124; --muted:#667085; --border:#d9dee7;
-  --panel:#ffffff; --soft:#f6f8fb; --accent:#2457a6; --warn:#b45309;
-  --resolved:#0F6E56; --unresolved:#993C1D; --partial:#854F0B;
+  --text:#1a1a2e; --muted:#6b7280; --border:#e5e7eb;
+  --panel:#fafaf7; --soft:#f5f5f0; --accent:#1e3a5f;
+  --warn:#92400e; --resolved:#065f46; --unresolved:#9b1c1c; --partial:#92400e;
+  --translation-bg:#f8f6f0; --translation-border:#c9b890;
+  --analysis-bg:#f6f8fb; --analysis-border:#6b8caf;
+  --code-bg:#1e1e2e; --code-text:#cdd6f4;
+  --question-bg:#fef3c7; --question-text:#78350f;
+  --echo-color:#1e6b52; --doubt-color:#92400e;
+  --serif:"Noto Serif SC","Source Han Serif SC",Georgia,"Times New Roman",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",Roboto,sans-serif;
+  --mono:"JetBrains Mono","Fira Code",Consolas,monospace;
 }}
 * {{ box-sizing:border-box; }}
+html {{ scroll-behavior:smooth; }}
 body {{
-  margin:0; background:#eef2f7; color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC",sans-serif;
-  line-height:1.8;
+  margin:0; background:#e8e6df; color:var(--text);
+  font-family:var(--sans); font-size:16px; line-height:1.85;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
 }}
-main {{ max-width:900px; margin:0 auto; padding:32px 24px 56px; background:var(--panel); min-height:100vh; }}
-h1 {{ margin:0 0 1rem; padding-bottom:1rem; border-bottom:3px solid #111827; font-size:clamp(1.5rem,3vw,2.4rem); line-height:1.2; }}
-h2 {{ margin-top:2.5rem; padding-top:1rem; border-top:1px solid var(--border); color:#111827; }}
-h3 {{ margin-top:1.8rem; color:#1f2937; }}
-h4 {{ margin-top:1.4rem; color:#374151; }}
-a {{ color:var(--accent); }}
-code {{ background:#eef2ff; color:#1e3a8a; padding:.1rem .3rem; border-radius:3px; font-size:.9em; }}
-pre {{ background:#111827; color:#f9fafb; padding:1rem; overflow-x:auto; border-radius:6px; }}
-pre code {{ background:transparent; color:inherit; padding:0; }}
-blockquote {{ border-left:4px solid var(--border); margin:.8rem 0; padding:.4rem 0 .4rem 1rem; color:#374151; background:#fafafa; }}
-table {{ border-collapse:collapse; width:100%; margin:1.2rem 0; display:block; overflow-x:auto; }}
-th,td {{ border:1px solid var(--border); padding:.5rem .7rem; text-align:left; vertical-align:top; }}
-th {{ background:var(--soft); font-weight:600; }}
-img {{ max-width:100%; height:auto; display:block; margin:1rem auto; border:1px solid var(--border); border-radius:6px; background:#fff; }}
-figure {{ margin:1.5rem 0; }}
-figcaption,.img-caption {{ color:var(--muted); font-size:.9rem; text-align:center; margin-top:.4rem; font-style:italic; }}
-.doubt {{ border-left:4px solid var(--warn); background:#fff7ed; padding:.6rem 1rem; margin:.8rem 0; border-radius:0 6px 6px 0; }}
-.translation {{ background:var(--soft); border-left:3px solid var(--accent); padding:.6rem 1rem; margin:.5rem 0 1rem; border-radius:0 6px 6px 0; }}
-.analysis {{ margin:.5rem 0; }}
-.analysis ul {{ margin:.3rem 0; }}
-hr {{ border:none; border-top:1px solid var(--border); margin:2rem 0; }}
-.meta-box {{ background:var(--soft); border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:1rem 0; }}
+main {{
+  max-width:920px; margin:0 auto; padding:48px 40px 80px;
+  background:var(--panel); min-height:100vh;
+  box-shadow:0 0 40px rgba(0,0,0,.04);
+}}
+h1 {{
+  margin:0 0 1.5rem; padding-bottom:1.2rem;
+  border-bottom:2px solid var(--accent);
+  font-family:var(--serif); font-size:clamp(1.6rem,3.5vw,2.2rem);
+  line-height:1.3; color:var(--accent); font-weight:700;
+  letter-spacing:-.01em;
+}}
+h2 {{
+  margin-top:3rem; margin-bottom:1rem; padding:.6rem 0 .6rem 1rem;
+  border-left:4px solid var(--accent);
+  font-family:var(--serif); font-size:1.5rem; color:var(--accent);
+  font-weight:600; line-height:1.3;
+  background:linear-gradient(90deg, rgba(30,58,95,.04) 0%, transparent 60%);
+}}
+h3 {{
+  margin-top:2rem; margin-bottom:.8rem;
+  font-family:var(--sans); font-size:1.15rem; color:#2d3748;
+  font-weight:600; line-height:1.4;
+  padding-bottom:.3rem; border-bottom:1px dashed var(--border);
+}}
+h4 {{ margin-top:1.5rem; color:#4a5568; font-size:1rem; font-weight:600; }}
+p {{ margin:.8rem 0; }}
+a {{ color:var(--accent); text-decoration:none; border-bottom:1px solid transparent; transition:border-color .15s; }}
+a:hover {{ border-bottom-color:var(--accent); }}
+strong {{ color:#1a202c; font-weight:600; }}
+em {{ color:#4a5568; }}
+
+/* 段落精读块 */
+h3 + p, h3 + div {{ margin-top:0; }}
+
+/* 翻译区 */
+.translation {{
+  background:var(--translation-bg);
+  border-left:3px solid var(--translation-border);
+  padding:1rem 1.4rem; margin:1rem 0 1.2rem;
+  border-radius:0 8px 8px 0;
+  font-family:var(--serif); font-size:1.02rem; line-height:1.9;
+  color:#2d3748;
+  position:relative;
+}}
+.translation::before {{
+  content:"译"; position:absolute; top:.6rem; right:.9rem;
+  font-family:var(--sans); font-size:.7rem; font-weight:700;
+  color:var(--translation-border); opacity:.6;
+  letter-spacing:.05em;
+}}
+
+/* 分析区 */
+.analysis {{
+  background:var(--analysis-bg);
+  border-left:3px solid var(--analysis-border);
+  padding:.8rem 1.2rem; margin:.6rem 0 1.2rem;
+  border-radius:0 6px 6px 0;
+}}
+.analysis ul {{ margin:.4rem 0; padding-left:1.4rem; list-style:none; }}
+.analysis li {{ margin:.35rem 0; padding-left:.2rem; position:relative; }}
+.analysis li::before {{ content:"▸"; position:absolute; left:-1rem; color:var(--analysis-border); font-size:.85em; }}
+
+/* 疑问 pill */
+.question-pill {{
+  display:inline-block;
+  background:var(--question-bg); color:var(--question-text);
+  padding:.2rem .7rem; border-radius:12px;
+  font-size:.88rem; font-weight:500;
+  margin:.3rem 0;
+}}
+
+/* 代码 */
+code {{
+  font-family:var(--mono); font-size:.88em;
+  background:#eef2f7; color:#1e3a5f;
+  padding:.12rem .35rem; border-radius:3px;
+}}
+pre {{
+  background:var(--code-bg); color:var(--code-text);
+  padding:1.2rem 1.4rem; overflow-x:auto;
+  border-radius:8px; font-family:var(--mono);
+  font-size:.85rem; line-height:1.6;
+  margin:1rem 0;
+}}
+pre code {{ background:transparent; color:inherit; padding:0; font-size:inherit; }}
+
+/* 引用 */
+blockquote {{
+  border-left:3px solid var(--border);
+  margin:1rem 0; padding:.5rem 0 .5rem 1.2rem;
+  color:#4a5568; background:transparent;
+  font-style:italic;
+}}
+
+/* 表格 */
+table {{
+  border-collapse:collapse; width:100%; margin:1.5rem 0;
+  font-size:.92rem; display:block; overflow-x:auto;
+  border-radius:6px; overflow:hidden;
+}}
+th,td {{ border:1px solid var(--border); padding:.6rem .9rem; text-align:left; vertical-align:top; }}
+th {{ background:var(--accent); color:#fff; font-weight:600; font-size:.85rem; letter-spacing:.02em; }}
+tbody tr:nth-child(even) {{ background:var(--soft); }}
+tbody tr:hover {{ background:#eef2f7; }}
+
+/* 图片 */
+img {{
+  max-width:100%; height:auto; display:block;
+  margin:1.5rem auto; border-radius:8px;
+  box-shadow:0 4px 16px rgba(0,0,0,.08);
+  background:#fff;
+}}
+figure {{ margin:2rem 0; text-align:center; }}
+figcaption,.img-caption {{
+  color:var(--muted); font-size:.88rem; text-align:center;
+  margin-top:.6rem; font-style:italic; line-height:1.5;
+  max-width:80%; margin-left:auto; margin-right:auto;
+}}
+
+/* 元信息盒 */
+.meta-box {{
+  background:var(--soft); border:1px solid var(--border);
+  border-radius:10px; padding:1.2rem 1.6rem; margin:1.5rem 0;
+}}
 .meta-box table {{ margin:0; }}
-.meta-box th,.meta-box td {{ border:none; }}
-.code-appendix {{ background:#f8f9fb; border:1px solid var(--border); border-radius:8px; padding:.5rem 1rem; margin:2rem 0; }}
-.code-appendix h3 {{ border-bottom:1px solid var(--border); padding-bottom:.5rem; }}
+.meta-box th,.meta-box td {{ border:none; padding:.25rem .8rem; }}
+
+/* 代码附录 */
+.code-appendix {{
+  background:#f8f9fb; border:1px solid var(--border);
+  border-radius:10px; padding:.5rem 1.4rem 1.4rem; margin:2rem 0;
+}}
+.code-appendix h3 {{
+  border-bottom:2px solid var(--accent);
+  padding-bottom:.6rem; margin-top:1rem;
+}}
+
+/* 分隔线 */
+hr {{ border:none; border-top:1px solid var(--border); margin:3rem 0; }}
+
 @media (max-width:720px) {{
-  main {{ padding:20px 14px 40px; }}
-  h1 {{ font-size:1.5rem; }}
-  th,td {{ min-width:120px; }}
+  main {{ padding:28px 18px 50px; }}
+  h1 {{ font-size:1.4rem; }}
+  h2 {{ font-size:1.25rem; }}
+  .translation,.analysis {{ padding:.7rem .9rem; font-size:.95rem; }}
+  th,td {{ min-width:100px; padding:.4rem .5rem; font-size:.85rem; }}
+  pre {{ padding:.8rem; font-size:.78rem; }}
 }}
 </style>
 <script>
@@ -156,6 +283,51 @@ def process_mermaid(content):
     return re.sub(r'```mermaid\s*\n(.*?)\n```', lambda m: f'<div class="mermaid">\n{m.group(1).strip()}\n</div>', content, flags=re.S)
 
 
+def post_process_reading_blocks(html):
+    """把 **中文翻译：** 和 **即时分析：** 标记转成带 class 的 div，让 CSS 能精确匹配"""
+    # 把 <p><strong>中文翻译：</strong>...</p> 转成 <div class="translation"><strong>中文翻译：</strong>...</div>
+    html = re.sub(
+        r'<p><strong>(中文翻译[：:].*?)</strong>(.*?)</p>',
+        lambda m: f'<div class="translation"><strong>{m.group(1)}</strong>{m.group(2)}</div>',
+        html, flags=re.S
+    )
+    # 多段翻译：把连续的翻译段合并
+    html = re.sub(
+        r'(</div>)\s*<p><strong>(中文翻译（段)',
+        r'\1\n<div class="translation"><strong>\2',
+        html
+    )
+
+    # 即时分析
+    html = re.sub(
+        r'<p><strong>(即时分析[：:].*?)</strong>(.*?)</p>',
+        lambda m: f'<div class="analysis"><strong>{m.group(1)}</strong>{m.group(2)}</div>',
+        html, flags=re.S
+    )
+    # 多段分析
+    html = re.sub(
+        r'(</div>)\s*<p><strong>(即时分析（段)',
+        r'\1\n<div class="analysis"><strong>\2',
+        html
+    )
+
+    # 疑问标记转 pill
+    html = re.sub(
+        r'<p><strong>(疑问\s*Q\d+[：:].*?)</strong>(.*?)</p>',
+        lambda m: f'<div class="question-pill"><strong>{m.group(1)}</strong>{m.group(2)}</div>',
+        html, flags=re.S
+    )
+
+    # 图注（斜体段落在图片后）
+    html = re.sub(
+        r'<p><em>(\*?.*?图\s*\d+.*?)</em></p>',
+        lambda m: f'<p class="img-caption">{m.group(1).strip("*")}</p>',
+        html, flags=re.S
+    )
+
+    return html
+
+
 def md_to_html(md, base_dir):
     if not markdown:
         raise RuntimeError("Missing dependency: markdown. pip install markdown")
@@ -164,6 +336,7 @@ def md_to_html(md, base_dir):
     protected, blocks = protect_math(md)
     html = markdown.markdown(protected, extensions=['tables', 'fenced_code', 'attr_list', 'md_in_html'])
     html = restore_math(html, blocks)
+    html = post_process_reading_blocks(html)
     return html
 
 
