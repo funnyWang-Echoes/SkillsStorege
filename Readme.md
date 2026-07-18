@@ -14,11 +14,12 @@
 ```text
 my-Skills/
   agent-trajectory-analysis/
+  paper-close-reading/
   paper-deep-analyse/
   sim-agent-research/
   workspace-bootstrap/
 doing/
-  paper-deep-analyse/
+  paper-deep-analyse/          # paper-deep-analyse 优化工作副本
 myAgentsMD/
   AGENTS.md
 other-Skills/
@@ -43,7 +44,8 @@ other-Skills/
 
 | Skill | 作用 | 来源 | 可用程度 |
 |---|---|---|---|
-| `paper-deep-analyse` | 对论文做逐段精读、论证链重建、实验/代码审计、相关工作发散，并生成 HTML 深度报告。 | 自有维护版本 | 可用但仍不够满意；当前规则很重，后续需要继续打磨报告质量、流程负担和自检体验。当前优化副本在 `doing/paper-deep-analyse/`。 |
+| `paper-deep-analyse` | 对论文做逐段精读、论证链重建、实验/代码审计、相关工作发散，并生成 HTML 深度报告。 | 自有维护版本 | 可用；已完成 A-F 优化（单一阈值源、合并 references、修脚本 bug、阶段化工作流、解耦 subagent、SKILL.md 减负）。当前优化副本在 `doing/paper-deep-analyse/`。 |
+| `paper-close-reading` | 带注释的论文逐段双语精读。一边读一边分析——每段先给中文翻译，再给即时分析（这段在论证什么、怎么连接前段、有没有问题），疑问有 ID 追踪并在被回答时显式标记呼应。代码对照放文末附录，图表从 MinerU 解析结果嵌入。 | 自有维护版本 | 可用；已通过 3 篇论文测试（Aurora CVPR2025 有代码 / MacTok CVPR2026 无代码 / DeCo CVPR2026 有代码+Table 全重建）。3 个 reference case 在 `references/example-cases/`。 |
 | `sim-agent-research` | 调研仿真软件的 Agent 化生态，包括接口、MCP、Skill、论文、接入难度和可用性复核。 | 自有维护版本 | 较可用；适合系统性调研，但执行成本较高，依赖联网检索质量。 |
 | `agent-trajectory-analysis` | 分析 Agent 实验轨迹日志，按阶段复盘工具调用、关键结果、失败点和改进方向。 | 自有维护版本 | 可用；偏分析模板型，适合 JSON/JSONL 轨迹复盘。 |
 | `workspace-bootstrap` | 快速创建或整理开发、科研、混合型工作空间，生成项目级 `AGENTS.md`、标准目录和可持久化任务状态系统。 | 自有维护版本 | 草稿可用；当前为 0.4.1 测试版，已完成 `testing/PaperReadingProject` 现有项目、空科研 workspace 和空开发 workspace 生成测试；默认生成中文 `AGENTS.md`/README/任务文档，重点强化 `.gitignore`、Do Not Touch 边界、任务真源复用、嵌套 AGENTS 和空项目命令诚实性。 |
