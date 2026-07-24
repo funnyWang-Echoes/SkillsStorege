@@ -16,6 +16,7 @@ my-Skills/
   agent-trajectory-analysis/
   paper-close-reading/
   paper-deep-analyse/
+  research-progress/
   sim-agent-research/
   workspace-bootstrap/
 doing/
@@ -49,6 +50,7 @@ other-Skills/
 | `sim-agent-research` | 调研仿真软件的 Agent 化生态，包括接口、MCP、Skill、论文、接入难度和可用性复核。 | 自有维护版本 | 较可用；适合系统性调研，但执行成本较高，依赖联网检索质量。 |
 | `agent-trajectory-analysis` | 分析 Agent 实验轨迹日志，按阶段复盘工具调用、关键结果、失败点和改进方向。 | 自有维护版本 | 可用；偏分析模板型，适合 JSON/JSONL 轨迹复盘。 |
 | `workspace-bootstrap` | 快速创建或整理开发、科研、混合型工作空间，生成项目级 `AGENTS.md`、标准目录和可持久化任务状态系统。 | 自有维护版本 | 草稿可用；当前为 0.4.1 测试版，已完成 `testing/PaperReadingProject` 现有项目、空科研 workspace 和空开发 workspace 生成测试；默认生成中文 `AGENTS.md`/README/任务文档，重点强化 `.gitignore`、Do Not Touch 边界、任务真源复用、嵌套 AGENTS 和空项目命令诚实性。 |
+| `research-progress` | 中文版「科研进展 / 工作进展」写作助手：把碎片化实验记录 / 周工作流水整理成结构完整、数据驱动、低 AI 味的进展文档。覆盖探索性实验小结、科研月报（导师/委员会）、文献分析、综合 Benchmark 报告、工作周报、项目进展汇报六类。 | 自有维护版本（科研写法借鉴 `E:\WSL and SSH remote download\geo_project` 高质量范文 + LobeHub `progress-report` 结构；周报写法借鉴现有进展类 Skill 与成熟周报 Prompt） | 可用（v0.2.0）；零外部依赖，纯提示词 + 模板驱动。已实测：周报删除「能力成长」节、下周计划为纯任务条目（无周次/可交付物/数字）、本周进展支持数据统计密集型子节、价值按科研/产业场景分类。待补：HTML/Word 导出。 |
 
 ## 他人 / 外部 Skills
 

@@ -29,3 +29,6 @@ backup/
 
 # Local test fixtures
 /testing/
+
+# Agent workspace (not repo content)
+.workbuddy/
