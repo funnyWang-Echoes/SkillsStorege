@@ -25,6 +25,7 @@ myAgentsMD/
   AGENTS.md
 other-Skills/
   aihot/
+  autoresearch/
   beautiful-article/
   gpt-image-2/
   hv-analysis/
@@ -57,6 +58,7 @@ other-Skills/
 | Skill | 作用 | 来源 | 可用程度 |
 |---|---|---|---|
 | `aihot` | 查询 AI HOT 中文 AI 资讯、日报、精选条目和关键词动态。 | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills) | 外部可用，依赖 `aihot.virxact.com` 公共接口。 |
+| `autoresearch` | 自主实验研究循环：agent 反复「改一个变量 → commit → 跑 → 读指标 → keep/discard → advance/reset」，直到预算耗尽或达标。适用于有单一自动指标、可自动运行、可 git 版本化的多轮优化任务（模型评测、仿真调参、超参/架构搜索）。 | **来源待确认**：用户提供 [letsgetai/agent-skills](https://github.com/letsgetai/agent-skills)（`skills/autoresearch/`，2026-07-24 入库），但该仓库 GitHub 当前返回 404，作者与 License 无法核验；SKILL.md 声明泛化自 [karpathy/autoresearch](https://github.com/karpathy/autoresearch)。 | 外部可用（未实测）；要求项目内有可自动测量的单一指标和可 git 化的代码；SKILL.md 建议配套 `experiment-hygiene`、`eval-harness` 两个 skill 使用（本库暂无）。 |
 | `hv-analysis` | 横纵分析法深度研究，用纵向历史和横向竞品/同类对比生成系统性研究报告。 | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills) | 外部可用，偏长报告工作流。 |
 | `khazix-writer` | 按“数字生命卡兹克”公众号风格写长文。 | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills) | 外部可用，风格强，不适合通用写作。 |
 | `neat-freak` | 会话结束后对项目文档、AGENTS/CLAUDE 规则和记忆做同步清理。 | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills) | 外部可用，适合阶段收尾。 |
@@ -81,6 +83,7 @@ other-Skills/
 | 2026-06-14 | [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) | `a0d6243` | `ppt-master` |
 | 2026-06-14 | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills) | `9c315d7` | `aihot`、`hv-analysis`、`khazix-writer`、`neat-freak`、`storage-analyzer` |
 | 2026-06-14 | [ConardLi/garden-skills](https://github.com/ConardLi/garden-skills) | `fbd6453` | `beautiful-article`、`gpt-image-2`、`kb-retriever`、`web-design-engineer`、`web-video-presentation` |
+| 2026-07-24 | 来源待确认（[letsgetai/agent-skills](https://github.com/letsgetai/agent-skills)，入库时 GitHub 返回 404） | 无法核验 | `autoresearch` |
 
 ## 后续待办
 
