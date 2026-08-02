@@ -36,6 +36,7 @@ other-Skills/
   storage-analyzer/
   web-design-engineer/
   web-video-presentation/
+  video-shotcraft/
 ```
 
 ## 个人 Agent 指令
@@ -69,6 +70,7 @@ other-Skills/
 | `web-design-engineer` | 生成高质量网页、仪表盘、原型、交互演示和数据可视化。 | [ConardLi/garden-skills](https://github.com/ConardLi/garden-skills) | 外部可用；适合视觉前端产物。 |
 | `web-video-presentation` | 把文章/口播稿做成点击驱动的 16:9 网页演示，可用于录屏视频。 | [ConardLi/garden-skills](https://github.com/ConardLi/garden-skills) | 外部可用；适合视频化演示，流程较重。 |
 | `ppt-master` | 多角色协作式 PPT 生成系统，把 PDF/DOCX/URL/Markdown 转为 SVG 页面并导出 PPTX。 | [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master)，实际 Skill 位于 `skills/ppt-master/`。 | 外部可用；能力完整但体量较大，使用前应按其依赖和流程做实测。 |
+| `video-shotcraft` | 用 104 张镜头配方卡、Remotion demo/模板、真实页面截图、2.5D 运镜、节奏卡点和音频素材制作电影感产品/宣传视频。 | 作者 Yihao；[Vincentwei1021/video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)；Apache-2.0。 | 外部可用；入库副本约 49.1 MB/660 个文件，依赖 Node/Remotion/浏览器等运行环境。音频授权和仍需核验的素材见 `assets/audio/ATTRIBUTION.md`。 |
 
 ## 已剥离的外层来源
 
@@ -84,6 +86,7 @@ other-Skills/
 | 2026-06-14 | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills) | `9c315d7` | `aihot`、`hv-analysis`、`khazix-writer`、`neat-freak`、`storage-analyzer` |
 | 2026-06-14 | [ConardLi/garden-skills](https://github.com/ConardLi/garden-skills) | `fbd6453` | `beautiful-article`、`gpt-image-2`、`kb-retriever`、`web-design-engineer`、`web-video-presentation` |
 | 2026-07-24 | 来源待确认（[letsgetai/agent-skills](https://github.com/letsgetai/agent-skills)，入库时 GitHub 返回 404） | 无法核验 | `autoresearch` |
+| 2026-08-02 | 作者 Yihao；[Vincentwei1021/video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)；Apache-2.0 | `d491544`（2026-07-28） | `video-shotcraft`；仓库根目录即真实 Skill，未保留外层仓库壳 |
 
 ## 后续待办
 
