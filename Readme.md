@@ -37,6 +37,7 @@ other-Skills/
   web-design-engineer/
   web-video-presentation/
   video-shotcraft/
+  xiaohongshu-skills/
 ```
 
 ## 个人 Agent 指令
@@ -71,10 +72,12 @@ other-Skills/
 | `web-video-presentation` | 把文章/口播稿做成点击驱动的 16:9 网页演示，可用于录屏视频。 | [ConardLi/garden-skills](https://github.com/ConardLi/garden-skills) | 外部可用；适合视频化演示，流程较重。 |
 | `ppt-master` | 多角色协作式 PPT 生成系统，把 PDF/DOCX/URL/Markdown 转为 SVG 页面并导出 PPTX。 | [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master)，实际 Skill 位于 `skills/ppt-master/`。 | 外部可用；能力完整但体量较大，使用前应按其依赖和流程做实测。 |
 | `video-shotcraft` | 用 104 张镜头配方卡、Remotion demo/模板、真实页面截图、2.5D 运镜、节奏卡点和音频素材制作电影感产品/宣传视频。 | 作者 Yihao；[Vincentwei1021/video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)；Apache-2.0。 | 外部可用；入库副本约 49.1 MB/660 个文件，依赖 Node/Remotion/浏览器等运行环境。音频授权和仍需核验的素材见 `assets/audio/ATTRIBUTION.md`。 |
+| `xiaohongshu-skills` | RedBookSkills：小红书图文/视频自动发布 + 内容检索与互动（搜索、详情、评论/回复、点赞收藏、主页快照、内容数据看板）。基于 Chrome DevTools Protocol 驱动浏览器。 | [white0dew/XiaohongshuSkills](https://github.com/white0dew/XiaohongshuSkills)；MIT（Copyright 2026 angiin）；仓库根即 Skill 本体，`SKILL.md` 中 `metadata.name=RedBookSkills` / `metadata.source=Angiin/Post-to-xhs` 与 GitHub 仓库名/作者不一致，实际以 GitHub 仓库为准。 | 外部可用（未实测）；**平台风控风险高**，建议只在测试号、小流量、人工复核标题/正文/素材后再发布；仅在 Windows + Python 3.10+ + Chrome 上验证过。剥离了 `README.md`/`LICENSE`/`AGENTS.md`/`.github`/`docs`/`images`/`public`/`assets`/`todo.md` 等外层仓库壳，只保留 `SKILL.md`、`requirements.txt`、`config/accounts.json.example`、`scripts/`。 |
 
 ## 已剥离的外层来源
 
 - `hugohe3/ppt-master`：来源为 [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master)，只保留 `skills/ppt-master/` 到 `other-Skills/ppt-master/`。
+- `white0dew/XiaohongshuSkills`：来源为 [white0dew/XiaohongshuSkills](https://github.com/white0dew/XiaohongshuSkills)，仓库根即真实 Skill，只保留 `SKILL.md`/`requirements.txt`/`config/accounts.json.example`/`scripts/` 到 `other-Skills/xiaohongshu-skills/`；外层 `README.md`/`LICENSE`/`AGENTS.md`/`.github`/`docs`/`images`/`public`/`assets`/`todo.md` 已剥离。
 - `khazix-skills/`：来源为 [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills)，只保留其中 `aihot`、`hv-analysis`、`khazix-writer`、`neat-freak`、`storage-analyzer` 到 `other-Skills/`。
 - `garden-skills/`：来源为 [ConardLi/garden-skills](https://github.com/ConardLi/garden-skills)，只保留其中 `beautiful-article`、`gpt-image-2`、`kb-retriever`、`web-design-engineer`、`web-video-presentation` 到 `other-Skills/`。
 
@@ -87,6 +90,7 @@ other-Skills/
 | 2026-06-14 | [ConardLi/garden-skills](https://github.com/ConardLi/garden-skills) | `fbd6453` | `beautiful-article`、`gpt-image-2`、`kb-retriever`、`web-design-engineer`、`web-video-presentation` |
 | 2026-07-24 | 来源待确认（[letsgetai/agent-skills](https://github.com/letsgetai/agent-skills)，入库时 GitHub 返回 404） | 无法核验 | `autoresearch` |
 | 2026-08-02 | 作者 Yihao；[Vincentwei1021/video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)；Apache-2.0 | `d491544`（2026-07-28） | `video-shotcraft`；仓库根目录即真实 Skill，未保留外层仓库壳 |
+| 2026-08-08 | [white0dew/XiaohongshuSkills](https://github.com/white0dew/XiaohongshuSkills)；MIT（Copyright 2026 angiin） | `8536136`（2026-08-08） | `xiaohongshu-skills`；仓库根即真实 Skill，仅保留 `SKILL.md`/`requirements.txt`/`config/accounts.json.example`/`scripts/` |
 
 ## 后续待办
 
