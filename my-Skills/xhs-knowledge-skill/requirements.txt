@@ -1,0 +1,10 @@
+requests>=2.28.0
+# 第五轮 P2 fix：websockets 13+ 移除了 sync.client 兼容 alias；用 12.x 稳
+websockets>=12.0,<14
+
+# 可选：Windows 非 Git Bash/WSL 用户的 fallback
+# Linux/macOS 通常自带 `file` 命令，不需要这个
+# Windows: pip install python-magic-bin
+# macOS: brew install libmagic && pip install python-magic
+python-magic>=0.4.27; platform_system != "Windows"
+python-magic-bin>=0.4.14; platform_system == "Windows"

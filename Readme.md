@@ -19,6 +19,7 @@ my-Skills/
   research-progress/
   sim-agent-research/
   workspace-bootstrap/
+  xhs-knowledge-skill/
 doing/
   paper-deep-analyse/          # paper-deep-analyse 优化工作副本
 myAgentsMD/
@@ -54,6 +55,7 @@ other-Skills/
 | `agent-trajectory-analysis` | 分析 Agent 实验轨迹日志，按阶段复盘工具调用、关键结果、失败点和改进方向。 | 自有维护版本 | 可用；偏分析模板型，适合 JSON/JSONL 轨迹复盘。 |
 | `workspace-bootstrap` | 快速创建或整理开发、科研、混合型工作空间，生成项目级 `AGENTS.md`、标准目录和可持久化任务状态系统。 | 自有维护版本 | 草稿可用；当前为 0.4.1 测试版，已完成 `testing/PaperReadingProject` 现有项目、空科研 workspace 和空开发 workspace 生成测试；默认生成中文 `AGENTS.md`/README/任务文档，重点强化 `.gitignore`、Do Not Touch 边界、任务真源复用、嵌套 AGENTS 和空项目命令诚实性。 |
 | `research-progress` | 中文版「科研进展 / 工作进展」写作助手：把碎片化实验记录 / 周工作流水整理成结构完整、数据驱动、低 AI 味的进展文档。覆盖探索性实验小结、科研月报（导师/委员会）、文献分析、综合 Benchmark 报告、工作周报、项目进展汇报六类。 | 自有维护版本（科研写法借鉴 `E:\WSL and SSH remote download\geo_project` 高质量范文 + LobeHub `progress-report` 结构；周报写法借鉴现有进展类 Skill 与成熟周报 Prompt） | 可用（v0.2.0）；零外部依赖，纯提示词 + 模板驱动。已实测：周报删除「能力成长」节、下周计划为纯任务条目（无周次/可交付物/数字）、本周进展支持数据统计密集型子节、价值按科研/产业场景分类。待补：HTML/Word 导出。 |
+| `xhs-knowledge-skill` | xhs-knowledge：把小红书收藏页笔记批量采集并整理成可直接拖入 Obsidian / Typora / VS Code / Logseq / Joplin 的结构化 MD 文档。支持图文 + 视频笔记（视频不下载，但 MD 保留源链接）；图片下载到本地并以标准 Markdown 语法引用；4 类模板（paper / skill / project / blog）由子代理读图 OCR 后分类渲染。 | 自有维护版本（`chrome_launcher.py` / `cdp_publish.py` / `feed_explorer.py` 衍生自 `Angin/Post-to-xhs`；业务脚本 export_collection / fetch_note_detail / download_images / render_markdown / transcode_for_ocr 为本仓库自研）。SKILL.md frontmatter `metadata.source` 自述为「本仓库自研（基于 Angin/Post-to-xhs CDP 流程裁剪）」。 | 较可用；已在多轮 retest（v3/v4/v5 + `retest_2026-08-09`）中验证导出、详情抓取、图片下载、OCR 转码、4 类渲染均工作。**风控风险**：自动化抓取可能被限流/封号，建议只用测试号、慢节奏（≥1.5s/条）；视频不下载（sign 时效），评论不抓。需 Python 3.10+、Chrome、CDP 9222；可选 `python-magic-bin`（Windows fallback）。 |
 
 ## 他人 / 外部 Skills
 

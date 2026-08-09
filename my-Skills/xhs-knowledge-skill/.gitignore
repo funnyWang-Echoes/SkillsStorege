@@ -1,0 +1,16 @@
+# ===== 隐私数据（绝对不要提交）=====
+outputs/
+logs/
+*.err
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
