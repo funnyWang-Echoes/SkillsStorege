@@ -1,13 +1,14 @@
 # SkillsStorege
 
-这个仓库用来管理可复用的 Agent Skill。目录分成两类：
+这个仓库用来管理可复用的 Agent Skill 与 MCP server。目录分成几类：
 
 - `my-Skills/`：我自己维护或深度改造的 Skill。
 - `other-Skills/`：从他人 GitHub 或外部来源整理来的 Skill，只保留可直接使用的 Skill 本体。
+- `other-MCPs/`：从他人 GitHub 或外部来源整理来的 MCP server，只保留可直接运行/安装的 MCP 本体（源码、包清单、测试、README、License）。
 - `doing/`：正在优化中的 Skill 工作副本，优化完成后再替换回 `my-Skills/` 或 `other-Skills/`。
 - `myAgentsMD/`：我自己的跨设备 Agent 指令文件，用于迁移和同步个人协作偏好；它不是 Skill 目录，不要求包含 `SKILL.md`。
 
-整理原则见 [AGENTS.md](AGENTS.md)。核心规则是：外部仓库下载后先分析来源，再剥离外层，只保留包含 `SKILL.md` 的真实 Skill 目录；来源、作用、可用程度统一记录在本文件。
+整理原则见 [AGENTS.md](AGENTS.md)。核心规则是：外部仓库下载后先分析来源，再剥离外层，只保留包含 `SKILL.md` 的真实 Skill 目录（或等价的 MCP 本体）；来源、作用、可用程度统一记录在本文件。
 
 ## 当前结构
 
@@ -24,6 +25,8 @@ doing/
   paper-deep-analyse/          # paper-deep-analyse 优化工作副本
 myAgentsMD/
   AGENTS.md
+other-MCPs/
+  slepp-ssh-mcp/
 other-Skills/
   aihot/
   autoresearch/
@@ -76,7 +79,15 @@ other-Skills/
 | `video-shotcraft` | 用 104 张镜头配方卡、Remotion demo/模板、真实页面截图、2.5D 运镜、节奏卡点和音频素材制作电影感产品/宣传视频。 | 作者 Yihao；[Vincentwei1021/video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)；Apache-2.0。 | 外部可用；入库副本约 49.1 MB/660 个文件，依赖 Node/Remotion/浏览器等运行环境。音频授权和仍需核验的素材见 `assets/audio/ATTRIBUTION.md`。 |
 | `xiaohongshu-skills` | RedBookSkills：小红书图文/视频自动发布 + 内容检索与互动（搜索、详情、评论/回复、点赞收藏、主页快照、内容数据看板）。基于 Chrome DevTools Protocol 驱动浏览器。 | [white0dew/XiaohongshuSkills](https://github.com/white0dew/XiaohongshuSkills)；MIT（Copyright 2026 angiin）；仓库根即 Skill 本体，`SKILL.md` 中 `metadata.name=RedBookSkills` / `metadata.source=Angiin/Post-to-xhs` 与 GitHub 仓库名/作者不一致，实际以 GitHub 仓库为准。 | 外部可用（未实测）；**平台风控风险高**，建议只在测试号、小流量、人工复核标题/正文/素材后再发布；仅在 Windows + Python 3.10+ + Chrome 上验证过。剥离了 `README.md`/`LICENSE`/`AGENTS.md`/`.github`/`docs`/`images`/`public`/`assets`/`todo.md` 等外层仓库壳，只保留 `SKILL.md`、`requirements.txt`、`config/accounts.json.example`、`scripts/`。 |
 
+## 他人 / 外部 MCPs
+
+| MCP | 作用 | 来源 | 可用程度 |
+|---|---|---|---|
+| `slepp-ssh-mcp` | stdio MCP server，包装本机 OpenSSH（ssh/scp/rsync），给 Agent 17 个工具：一次性远程执行（`ssh_exec`）、持久交互会话（PTY + transcript + 可选 tmux 实时旁观，支持 `session_name` 跨调用/跨会话复用）、端口转发（独立工具便于权限门控）、远程文件读/建/改/搜（`ssh_view`/`ssh_create`/`ssh_edit`/`ssh_grep`/`ssh_glob`，对齐本地文件工具语义）。零第三方运行时依赖（纯 Python 标准库实现 JSON-RPC/MCP），直接复用本机 `~/.ssh/config`、密钥、ProxyJump。 | [slepp/ssh-mcp](https://github.com/slepp/ssh-mcp)（作者 Stephen Olesen，加拿大，GitHub 2008 年注册）；MIT；PyPI 包名 `slepp-ssh-mcp`，v0.2.0，拉取 commit `28834a8`。 | 外部可用（已实测）：**仅 POSIX**——在 WSL Ubuntu（Python 3.14）114/114 测试全过 + stdio 握手/`tools/list` 冒烟通过；Windows 原生不可用（会话依赖 `os.openpty`/进程组信号，本机直跑 83 errors + 5 failures），Windows 上须经 WSL 运行。要求 Python 3.10+、本机 `ssh`/`scp`，`rsync` 仅 `ssh_sync` 需要，`tmux` 可选。**已确认安全缺陷**：`extra_ssh_args` 黑名单与 README 声明不符——`ssh -F <恶意config>`（config 内 `ProxyCommand` 可致本机命令执行）与 `scp -S <恶意程序>` 均未被拦截，已在本地复现；利用前提是 Agent 已能控制本机文件/二进制，若 MCP client 只暴露 SSH 工具做权限隔离则该缺口有意义，拟向上游提 issue。其他注意：serve 循环单线程串行（无 timeout 的长 `ssh_exec` 会阻塞其他工具调用，会话本体在后台线程不受影响）；transcript 可能含密码/密钥（0600 权限但不自动清理）；`ssh_edit` 为非原子两次往返读写。入库保留 `README.md`/`LICENSE`/`pyproject.toml`/`src/`/`tests/`，剥离 `.github/` CI 与发布脚本。 |
+
 ## 已剥离的外层来源
+
+- `slepp/ssh-mcp`：来源为 [slepp/ssh-mcp](https://github.com/slepp/ssh-mcp)，仓库根即 MCP 本体，只保留 `README.md`/`LICENSE`/`pyproject.toml`/`src/ssh_mcp/`/`tests/` 到 `other-MCPs/slepp-ssh-mcp/`；外层 `.github/`（CI/发布 workflow）与 `.gitignore` 已剥离。
 
 - `hugohe3/ppt-master`：来源为 [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master)，只保留 `skills/ppt-master/` 到 `other-Skills/ppt-master/`。
 - `white0dew/XiaohongshuSkills`：来源为 [white0dew/XiaohongshuSkills](https://github.com/white0dew/XiaohongshuSkills)，仓库根即真实 Skill，只保留 `SKILL.md`/`requirements.txt`/`config/accounts.json.example`/`scripts/` 到 `other-Skills/xiaohongshu-skills/`；外层 `README.md`/`LICENSE`/`AGENTS.md`/`.github`/`docs`/`images`/`public`/`assets`/`todo.md` 已剥离。
@@ -93,9 +104,11 @@ other-Skills/
 | 2026-07-24 | 来源待确认（[letsgetai/agent-skills](https://github.com/letsgetai/agent-skills)，入库时 GitHub 返回 404） | 无法核验 | `autoresearch` |
 | 2026-08-02 | 作者 Yihao；[Vincentwei1021/video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)；Apache-2.0 | `d491544`（2026-07-28） | `video-shotcraft`；仓库根目录即真实 Skill，未保留外层仓库壳 |
 | 2026-08-08 | [white0dew/XiaohongshuSkills](https://github.com/white0dew/XiaohongshuSkills)；MIT（Copyright 2026 angiin） | `8536136`（2026-08-08） | `xiaohongshu-skills`；仓库根即真实 Skill，仅保留 `SKILL.md`/`requirements.txt`/`config/accounts.json.example`/`scripts/` |
+| 2026-08-24 | [slepp/ssh-mcp](https://github.com/slepp/ssh-mcp)；MIT；PyPI 名 `slepp-ssh-mcp`（本仓库首个 MCP 入库） | `28834a8`（v0.2.0，2026-07-09） | `slepp-ssh-mcp` 入 `other-MCPs/`；保留 `README.md`/`LICENSE`/`pyproject.toml`/`src/`/`tests/`，剥离 `.github/` |
 
 ## 后续待办
 
-- 后续每新增一个外部 Skill，都先记录来源再删除外层仓库壳。
+- 后续每新增一个外部 Skill/MCP，都先记录来源再删除外层仓库壳。
+- `slepp-ssh-mcp` 的 `extra_ssh_args` 黑名单绕过（`ssh -F` / `scp -S`）拟向上游提 issue，提交后在此登记链接。
 - 在 `doing/paper-deep-analyse/` 中继续优化 `paper-deep-analyse`，满意后再替换正式目录。
 - 持续评估 `paper-deep-analyse` 的满意度，尤其是报告质量、执行成本和自检流程。
