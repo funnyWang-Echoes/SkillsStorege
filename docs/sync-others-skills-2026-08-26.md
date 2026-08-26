@@ -14,6 +14,7 @@
 | `web-design-engineer` | garden-skills `aaf9a82` | v1.3.0 | 33 文件 / 257K → 39 文件 / 313K | 全目录覆盖（新增 6 个） | `78b2d6c` |
 | `aihot` | khazix-skills `7a5c493` | v1.5.4 | 1 文件 / 24K → 10 文件 / 71K | 全目录覆盖（新增 9 个） | `b671c7b` |
 | `video-shotcraft` | video-shotcraft `d9ffa6d3` | upstream HEAD | 660 文件 / 49M → 889 文件 / 53M | 全目录覆盖（新增 258 个，**排除上游 `.git/` 184M**） | `e898ed8` |
+| `ppt-master` | hugohe3/ppt-master `ebd74d1f` | v5.0.0 | 12,131 文件 / 76M → 12,925 文件 / 95M | 全目录覆盖（**架构级重写**） | `7d5eeda` |
 
 ## 工作流
 
@@ -77,3 +78,65 @@
 - **字节一致性**：每个 Skill 替换后 `md5sum other-Skills/<name>/SKILL.md /tmp/upstream-check/.../SKILL.md` 完全一致
 - **未入库 `.git/`**：`ls other-Skills/video-shotcraft/.git` 返回 No such file or directory
 - **未入库 `.env`（运行时）**：`find other-Skills/<name> -type f -name .env` 仅返回 neat-freak evals fixture（说明如上）
+
+---
+
+## ppt-master（补遗，commit `7d5eeda` + docs commit）
+
+### 上游身份与首次入库 commit
+
+| 项 | 数据 |
+|---|---|
+| 仓库 | [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) |
+| License | MIT |
+| 作者 | Hugo He（hugohe3） |
+| 真实 Skill 路径 | `skills/ppt-master/SKILL.md`（不在仓库根；本仓库是 monorepo，只取 Skill 子目录） |
+| 当前 HEAD | `ebd74d1f`（2026-08-25，`fix(roundtrip): preserve PPTX fidelity through SVG conversion`） |
+| 当前版本 | **v5.0.0**（frontmatter `metadata.version: "5.0.0"`，2026-08-24 bump by `e469064b chore(release): bump version fields to 5.0.0`） |
+| **真实首次入库 commit** | **`4e57f2f7`**（2026-03-20，`refactor: migrate to skill-based architecture with multi-platform adapter generation`） |
+| Readme 错误 commit | `a0d6243` —— 不存在上游（`git cat-file -t a0d6243` → Not a valid object），仓库最早 commit 为 `fa291f44 梳理之后第一次提交` |
+
+`4e57f2f7` 的关键作用：把上游项目从 `tools/` + `roles/` + `docs/` 旧布局迁移到 Skill-based 架构：`tools/ → skills/ppt-master/scripts/`、`templates/ → skills/ppt-master/templates/`、把 13 个 references 从 `roles/` 与 `docs/` 合并入 `skills/ppt-master/references/`（93KB vs 203KB，54% 体积减少）。本仓库 2026-06-14 入库时记录的 `a0d6243` 是记录错误，现已修正。
+
+### 自上次入库（2026-06-14）以来变化规模
+
+- **910 commits** 涉及 `skills/ppt-master/`
+- **1,884 unique files** changed
+- 现行 v5.0.0（2026-08-24 release）相比 v2.x 入库版本是**架构级重写**
+
+### 同步详情
+
+仅拷贝上游仓库的 `skills/ppt-master/` 子目录（不拷仓库根的 `.github/`、`AGENTS.md`、`docs/`、`index.html`、`projects/`、根 `requirements.txt` 等 CI/分发元数据）。SKILL.md 从 41,757 B / 542 行（v2 串行 pipeline "Step 1..N" + Main Pipeline Scripts 14 项 + 8 项全局确认）改为 5,700 B / 79 行（v5 路由式：Global Execution Discipline + Mandatory Load Order + Global Communication Rules，主流程由 `workflows/routing.md` + `workflows/profiles/*.md` + `workflows/stages/*.md` 驱动）。
+
+**新增**（564 项）：
+
+- `scripts/attribution_guard.py` —— SKILL.md 第 2 步硬性 gate，必须随同步带入
+- 15 个 references：`artifact-ownership`、`executor-{chart,image,notes,structure,structured,table,visualization,web-image}`、`native-{data-interface,formula,hyperlinks,shape-authoring}`、`pptx-structure-interface`、`preset-shape-vocabulary`、`semantic-svg`、`shared-standards-core`、`strategist-{image,template}`、`topology-assembly`、`video-design`
+- 51 个 scripts（`prompt_audit`、`project_specs`、`mirror_template_materialize`、`chart_recall`、`narration_sync`、`slide_roster`、`sound_sync`、`video_*`、`native_enhance_pptx`、`pptx_intake`、`pptx_delivery_check` 等）+ 4 个 scripts 子目录（`confirm_ui/`、`pptx_shapes/`、`project_management/`、`svg_quality/`）+ 数据文件（`pptx_animation_presets.json` 561KB、`prompt_audit_manifest.json`）
+- `workflows/{governance/, profiles/, stages/}` 三个子目录 + `workflows/{generate-pptx, native-enhance-pptx, routing, index}.md`
+- 5 类 templates 新增：`styles/`（12 风格）、`decks/中国电信`、`decks/中汽研`、`scaffolds/`、`schemas/`、`sounds/`、`VISUALIZATION_TEMPLATE_AUTHORING.md`
+- 6 个 brands：`alibaba`、`aws`、`bain`、`bcg`、`deloitte`、`huawei`、`jpmorgan`、`mckinsey`、`nvidia`、`pwc`、`tencent`、`xiaomi`（实际新增 6 个，总数 12 → 18）
+- 大量 chart/layout/icon 资源（chart SVG 新增 donut / dual_axis_line / dumbbell / funnel / gantt / gauge / grouped_bar / heatmap 等）
+
+**丢弃**（v2 时代不再适用，100 项本地独有文件）：
+
+- `workflows/{create-brand, customize-animations, generate-audio, live-preview, resume-execute, topic-research, verify-charts, visual-review}.md` —— v5 路由表替代
+- `scripts/svg_to_pptx/*.py`（13 文件）—— 上游改用 `native_enhance_pptx`
+- 本地部分老品牌模板（`anthropic/`、`google/`、`brands/README.md`、`charts_index`、`brands_index`） —— 上游 v5 重新整理
+
+### 残留风险
+
+- **最大风险**：v5.0.0 是**架构级**变化（routing + profiles + stages），不是简单的版本号升级。Agent 在调用本 Skill 时的执行流程会显著变化 —— 任何下游 agent 流程文档（如 skill 内置 example）需要重新对照
+- **次风险**：仓库大小显著增加（76M → 95M，+19M）
+- **未做实测**：v5 路由式工作流未实际跑过生成 PPT 的完整流程
+- **未保留 v2 workflows**：本地无 LOCAL-EDIT.md 记录 v2 workflows 的迁移意图；如需保留，可在 future commit 单独 backport
+
+### 验证
+
+- `md5sum other-Skills/ppt-master/SKILL.md /tmp/upstream-check/ppt-master/skills/ppt-master/SKILL.md` 一致（`b5e24473...`）
+- `test -f other-Skills/ppt-master/scripts/attribution_guard.py` 通过
+- `find other-Skills/ppt-master -type d -name __pycache__` 为空
+- `find other-Skills/ppt-master -type f -name .env` 为空
+- `ls other-Skills/ppt-master/.git` → No such file or directory
+- `grep '^version:' other-Skills/ppt-master/SKILL.md` 返回 `version: "5.0.0"`
+- `find other-Skills/ppt-master -type f | wc -l` = 12,925
