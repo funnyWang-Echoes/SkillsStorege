@@ -65,7 +65,7 @@ other-Skills/
 | Skill | 作用 | 来源 | 可用程度 |
 |---|---|---|---|
 | `aihot` | 查询 AI HOT 中文 AI 资讯、日报、精选条目和关键词动态。 | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills) | 外部可用，依赖 `aihot.virxact.com` 公共接口。 |
-| `autoresearch` | 自主实验研究循环：agent 反复「改一个变量 → commit → 跑 → 读指标 → keep/discard → advance/reset」，直到预算耗尽或达标。适用于有单一自动指标、可自动运行、可 git 版本化的多轮优化任务（模型评测、仿真调参、超参/架构搜索）。 | **来源待确认**：用户提供 [letsgetai/agent-skills](https://github.com/letsgetai/agent-skills)（`skills/autoresearch/`，2026-07-24 入库），但该仓库 GitHub 当前返回 404，作者与 License 无法核验；SKILL.md 声明泛化自 [karpathy/autoresearch](https://github.com/karpathy/autoresearch)。 | 外部可用（未实测）；要求项目内有可自动测量的单一指标和可 git 化的代码。**已本地化（local-0.2.0）**：删除 `experiment-hygiene`、`eval-harness` 等缺失配套 skill 引用，并补 `results/` git 口径、中断恢复协议、baseline 抓取验证、平台执行说明；修改记录见 `other-Skills/autoresearch/LOCAL-EDIT.md`。 |
+| `autoresearch` | 自主实验研究循环：agent 反复「改一个变量 → commit → 跑 → 读指标 → keep/discard → advance/reset」，直到预算耗尽或达标。适用于有单一自动指标、可自动运行、可 git 版本化的多轮优化任务（模型评测、仿真调参、超参/架构搜索）。 | 本地 SKILL.md 泛化自 [karpathy/autoresearch](https://github.com/karpathy/autoresearch)（上游 HEAD `228791f`）。2026-07-24 入库时引用源为 [letsgetai/agent-skills](https://github.com/letsgetai/agent-skills)，但该仓库 GitHub 当前仍返回 404，作者与 License 无法核验；上游血缘以 `karpathy/autoresearch` 为准。 | 外部可用（未实测）；要求项目内有可自动测量的单一指标和可 git 化的代码。**已本地化（local-0.2.0）**：删除 `experiment-hygiene`、`eval-harness` 等缺失配套 skill 引用，并补 `results/` git 口径、中断恢复协议、baseline 抓取验证、平台执行说明；修改记录见 `other-Skills/autoresearch/LOCAL-EDIT.md`。 |
 | `hv-analysis` | 横纵分析法深度研究，用纵向历史和横向竞品/同类对比生成系统性研究报告。 | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills) | 外部可用，偏长报告工作流。 |
 | `khazix-writer` | 按“数字生命卡兹克”公众号风格写长文。 | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills) | 外部可用，风格强，不适合通用写作。 |
 | `neat-freak` | 会话结束后对项目文档、AGENTS/CLAUDE 规则和记忆做同步清理。 | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills) | 外部可用，适合阶段收尾。 |
@@ -75,7 +75,7 @@ other-Skills/
 | `kb-retriever` | 本地知识库渐进式检索与问答，支持 PDF/Excel 等文件处理规则。 | [ConardLi/garden-skills](https://github.com/ConardLi/garden-skills) | 外部可用；效果依赖知识库索引质量。 |
 | `web-design-engineer` | 生成高质量网页、仪表盘、原型、交互演示和数据可视化。 | [ConardLi/garden-skills](https://github.com/ConardLi/garden-skills) | 外部可用；适合视觉前端产物。 |
 | `web-video-presentation` | 把文章/口播稿做成点击驱动的 16:9 网页演示，可用于录屏视频。 | [ConardLi/garden-skills](https://github.com/ConardLi/garden-skills) | 外部可用；适合视频化演示，流程较重。 |
-| `ppt-master` | 多角色协作式 PPT 生成系统，把 PDF/DOCX/URL/Markdown 转为 SVG 页面并导出 PPTX。 | [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master)，实际 Skill 位于 `skills/ppt-master/`。 | 外部可用；能力完整但体量较大，使用前应按其依赖和流程做实测。 |
+| `ppt-master` | 多角色协作式 PPT 生成系统，把 PDF/DOCX/URL/Markdown 转为 SVG 页面并导出 PPTX。 | [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master)，实际 Skill 位于 `skills/ppt-master/`；上游 HEAD `ebd74d1`。**入库 commit 待核验**：Readme 历史记录的 `a0d6243` 在上游仓库不存在（`git cat-file -t a0d6243` → Not a valid object），仓库最早 commit 为 `fa291f44 梳理之后第一次提交`，现存 1732 个 commit；建议下次刷新前先 `git log --reverse -- skills/ppt-master/SKILL.md` 找到 `skills/ppt-master/` 路径首次出现的 commit。 | 外部可用；能力完整但体量较大，使用前应按其依赖和流程做实测。 |
 | `video-shotcraft` | 用 104 张镜头配方卡、Remotion demo/模板、真实页面截图、2.5D 运镜、节奏卡点和音频素材制作电影感产品/宣传视频。 | 作者 Yihao；[Vincentwei1021/video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)；Apache-2.0。 | 外部可用；入库副本约 49.1 MB/660 个文件，依赖 Node/Remotion/浏览器等运行环境。音频授权和仍需核验的素材见 `assets/audio/ATTRIBUTION.md`。 |
 | `xiaohongshu-skills` | RedBookSkills：小红书图文/视频自动发布 + 内容检索与互动（搜索、详情、评论/回复、点赞收藏、主页快照、内容数据看板）。基于 Chrome DevTools Protocol 驱动浏览器。 | [white0dew/XiaohongshuSkills](https://github.com/white0dew/XiaohongshuSkills)；MIT（Copyright 2026 angiin）；仓库根即 Skill 本体，`SKILL.md` 中 `metadata.name=RedBookSkills` / `metadata.source=Angiin/Post-to-xhs` 与 GitHub 仓库名/作者不一致，实际以 GitHub 仓库为准。 | 外部可用（未实测）；**平台风控风险高**，建议只在测试号、小流量、人工复核标题/正文/素材后再发布；仅在 Windows + Python 3.10+ + Chrome 上验证过。剥离了 `README.md`/`LICENSE`/`AGENTS.md`/`.github`/`docs`/`images`/`public`/`assets`/`todo.md` 等外层仓库壳，只保留 `SKILL.md`、`requirements.txt`、`config/accounts.json.example`、`scripts/`。 |
 
@@ -98,7 +98,7 @@ other-Skills/
 
 | 日期 | 来源 | 拉取 commit | 入库内容 |
 |---|---|---|---|
-| 2026-06-14 | [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) | `a0d6243` | `ppt-master` |
+| 2026-06-14 | [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) | `a0d6243`（**已核验：上游不存在**，需在下一次刷新前用 `git log --reverse -- skills/ppt-master/SKILL.md` 重核） | `ppt-master` |
 | 2026-06-14 | [KKKKhazix/khazix-skills](https://github.com/KKKKhazix/khazix-skills) | `9c315d7` | `aihot`、`hv-analysis`、`khazix-writer`、`neat-freak`、`storage-analyzer` |
 | 2026-06-14 | [ConardLi/garden-skills](https://github.com/ConardLi/garden-skills) | `fbd6453` | `beautiful-article`、`gpt-image-2`、`kb-retriever`、`web-design-engineer`、`web-video-presentation` |
 | 2026-07-24 | 来源待确认（[letsgetai/agent-skills](https://github.com/letsgetai/agent-skills)，入库时 GitHub 返回 404） | 无法核验 | `autoresearch` |
@@ -112,3 +112,4 @@ other-Skills/
 - `slepp-ssh-mcp` 的 `extra_ssh_args` 黑名单绕过（`ssh -F` / `scp -S`）拟向上游提 issue，提交后在此登记链接。
 - 在 `doing/paper-deep-analyse/` 中继续优化 `paper-deep-analyse`，满意后再替换正式目录。
 - 持续评估 `paper-deep-analyse` 的满意度，尤其是报告质量、执行成本和自检流程。
+- 2026-08-26 上游版本检查（`docs/others-skills-version-check-2026-08-26.md`）：建议按优先级刷新 `neat-freak` (v3.0) → `web-design-engineer` (v1.3.0) → `aihot` (v1.5.4) → `video-shotcraft`（新增 demos/gallery/jianying-export）；7 个 Skill SKILL.md 与上游 HEAD 字节相同，无需同步；`xiaohongshu-skills` 自入库以来无功能变更。
