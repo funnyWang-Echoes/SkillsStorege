@@ -50,3 +50,16 @@
 ## 复核建议
 
 由于本检查只比对了 `SKILL.md` 的字节 hash 和顶层目录清单，对 `references/`、`scripts/` 子文件没有逐文件 diff，建议对建议刷新的 4 个 Skill 在 doing/ 工作副本里用 `diff -rq` 跑一次完整目录比对后再入库。
+
+## 补充核验（hugohe3/ppt-master 仓库身份）
+
+`https://github.com/hugohe3/ppt-master` 即 `other-Skills/ppt-master/` 的真正上游来源，已通过以下证据确认：
+
+- 仓库远程为 `origin = https://github.com/hugohe3/ppt-master.git`
+- README 标题自述：「PPT Master — AI generates native PowerPoint from any document」（中文 README_CN：「AI 生成原生 PowerPoint，支持任意文档输入」），License MIT
+- 仓库根 `AGENTS.md` 明确：「**You MUST read `skills/ppt-master/SKILL.md`** ... It owns global execution discipline ...」——与 Readme 中「实际 Skill 位于 `skills/ppt-master/`」一致
+- 当前 HEAD `ebd74d1f`（2026-08-25 14:45 UTC），作者 `hugohe3`，commit message `fix(roundtrip): preserve PPTX fidelity through SVG conversion`
+- 最新 release tag `v5.0.0`，已有 `v5.0.0 / v4.8.0 / v4.7.0 / v4.6.0 / ...` 一系列发布版本
+- 仓库现存 1732 个 commit；最早 commit 为 `fa291f44 梳理之后第一次提交`
+
+**结论**：仓库身份确认无误。Readme 历史记录中错误的 `a0d6243` 不可能属于本仓库（`git cat-file -t a0d6243` → Not a valid object）。修正方向：先用 `git log --reverse -- skills/ppt-master/SKILL.md` 找到 `skills/ppt-master/` 路径首次出现的真实 commit，再覆盖 Readme 中错误的入库 commit 字段。
