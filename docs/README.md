@@ -28,3 +28,4 @@
 | 文件 | 类型 | 日期 | 摘要 |
 |---|---|---|---|
 | [others-skills-version-check-2026-08-26.md](others-skills-version-check-2026-08-26.md) | version-check | 2026-08-26 | `other-Skills/` 14 个 Skill 与上游 HEAD 逐项比对；建议按优先级刷新 `neat-freak` v3.0 → `web-design-engineer` v1.3.0 → `aihot` v1.5.4 → `video-shotcraft`；修正 `autoresearch` 与 `ppt-master` 来源描述。 |
+| [sync-others-skills-2026-08-26.md](sync-others-skills-2026-08-26.md) | sync | 2026-08-26 | 4 个 Skill 同步落地记录：每 Skill 一个 commit，doing 工作副本 + `diff -rq` 校验；`video-shotcraft` 同步时排除上游 `.git/` 184M；记录残留风险（`ppt-master` 入库 commit 待重核、`doing/.env` 违规、`neat-freak` evals fixture `.env`）。 |
