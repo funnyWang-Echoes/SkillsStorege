@@ -10,6 +10,8 @@ Neutral information delivery. Lay the facts out plainly and completely, organize
 
 **Topic titles, not assertions**: the page title names its subject plainly ("Q3 headcount by team", "Supported file formats") — clarity for lookup beats a persuasive finding. This is the deliberate inverse of `pyramid`'s assertion titles.
 
+**`core_message` states coverage, not a claim**: when filling `design_spec.md §IX`, write each page's `core_message` as what the page lays out ("Q3 headcount across teams"), not what it proves ("headcount is concentrating in engineering"). The §IX field reads as an assertion under the other modes; under `briefing` it names scope.
+
 **Complete over selective**: include the full reference set the audience needs to scan, not only the points that support a case. Coverage is the value here.
 
 **Parallel, even treatment**: sibling items get the same shape and weight so they can be compared and located quickly; nothing is dramatized over its peers unless it genuinely differs.
@@ -24,11 +26,11 @@ Neutral information delivery. Lay the facts out plainly and completely, organize
 - Even hierarchy within a section; consistent layout across sibling pages so the eye always knows where to look.
 - Where one figure genuinely matters (a total, a status flag, an exception), surface it — but don't invent a punchline the content doesn't have.
 
-> Table / list / dashboard / status-card geometry lives in [`templates/charts/`](../../templates/charts/); this mode decides *that the page informs completely and neutrally*, not pixel positions.
+> Cell-grid tables and value-driven marks may use [`templates/tables/`](../../templates/tables/) and [`templates/charts/`](../../templates/charts/); qualitative topology is composed at runtime through [`executor-structure.md`](../executor-structure.md). A dashboard may combine them. This mode decides *that the page informs completely and neutrally*, not pixel positions.
 
 ## 3. Speaker-notes register
 
-Even, factual, plain. State what the page shows without building tension or pressing a "so what". No rhetorical questions, no suspense — a clear read-out the listener can follow or skim. Numbers stated plainly. (Common framework: [`executor-base.md §8`](../executor-base.md).)
+Even, factual, plain. State what the page shows without building tension or pressing a "so what". No rhetorical questions, no suspense — a clear read-out the listener can follow or skim. Numbers stated plainly. (Common framework: [`executor-notes.md`](../executor-notes.md) §1.)
 
 ## 4. Page skeleton example
 
