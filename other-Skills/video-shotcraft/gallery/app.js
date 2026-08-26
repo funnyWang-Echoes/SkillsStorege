@@ -58,6 +58,8 @@ const elements = {
   selectionCount: document.querySelector('#selectionCount'),
   copySelected: document.querySelector('#copySelected'),
   clearSelected: document.querySelector('#clearSelected'),
+  followMenu: document.querySelector('.follow-menu'),
+  followTrigger: document.querySelector('.follow-trigger'),
 };
 
 const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (character) => ({
@@ -69,6 +71,11 @@ const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (character)
 }[character]));
 
 const text = (key) => translations.ui[state.language][key] || key;
+// 入库 14 天内的卡在卡片和分类导航上挂 NEW 徽标（过期自动消失，无需维护）；
+// addedAt 由 sync 脚本在卡首次进 library.json 时写死，之后编辑只动 updatedAt
+const NEW_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+const isNewCard = (card) =>
+  Boolean(card.addedAt) && Date.now() - Date.parse(card.addedAt) < NEW_WINDOW_MS;
 const cardName = (card) => state.language === 'zh'
   ? translations.cardsZh[card.name] || card.name
   : card.name;
@@ -134,6 +141,24 @@ function applyLanguage() {
   setSyncStatus('ready', state.hasLoaded ? text('synced') : text('scanning'));
 }
 
+function setFollowMenuOpen(open) {
+  elements.followMenu?.classList.toggle('is-open', open);
+  elements.followTrigger?.setAttribute('aria-expanded', String(open));
+}
+
+elements.followMenu?.addEventListener('pointerenter', () => setFollowMenuOpen(true));
+elements.followMenu?.addEventListener('pointerleave', () => setFollowMenuOpen(false));
+elements.followMenu?.addEventListener('focusin', () => setFollowMenuOpen(true));
+elements.followMenu?.addEventListener('focusout', (event) => {
+  if (!elements.followMenu.contains(event.relatedTarget)) setFollowMenuOpen(false);
+});
+elements.followTrigger?.addEventListener('click', () => {
+  setFollowMenuOpen(true);
+});
+document.addEventListener('click', (event) => {
+  if (!elements.followMenu?.contains(event.target)) setFollowMenuOpen(false);
+});
+
 function mediaMarkup(style, cardIndex) {
   const title = escapeHtml(styleName(style));
   const status = implementationStatusLabel(style);
@@ -149,13 +174,13 @@ function mediaMarkup(style, cardIndex) {
   if (style.media.type === 'gif') {
     return `
       <figure class="preview">
-        <img class="lazy-media" data-src="${style.media.url}" alt="${title}" loading="lazy">
+        <img class="lazy-media" data-src="${escapeHtml(style.media.url)}" alt="${title}" loading="lazy">
       </figure>`;
   }
 
   return `
     <figure class="preview">
-      <video class="lazy-media" data-src="${style.media.url}" muted loop playsinline preload="none"
+      <video class="lazy-media" data-src="${escapeHtml(style.media.url)}" muted loop playsinline preload="none"
         aria-label="${title}" data-key="${cardIndex}"></video>
       <button class="video-expand" type="button" aria-label="${escapeHtml(text('fullscreen'))} ${title}"
         data-expand-key="${cardIndex}" title="${escapeHtml(text('fullscreen'))}">
@@ -202,7 +227,7 @@ function cardMarkup(card, cardIndex) {
       <div class="card-body">
         <div class="card-title-row">
           <div class="card-title">
-            <h3>${escapeHtml(title)}</h3>
+            <h3>${escapeHtml(title)}${isNewCard(card) ? ' <span class="new-badge">NEW</span>' : ''}</h3>
             ${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ''}
           </div>
         </div>
@@ -361,9 +386,11 @@ async function loadLibrary({silent = false} = {}) {
 function renderCategoryCounts() {
   if (!state.library) return;
   const counts = {all: state.library.cards.length};
+  const hasNew = {all: state.library.cards.some(isNewCard)};
   state.library.cards.forEach((card) => {
     (card.tags || [card.category]).forEach((tag) => {
       counts[tag] = (counts[tag] || 0) + 1;
+      if (isNewCard(card)) hasNew[tag] = true;
     });
   });
   elements.filters.querySelectorAll('[data-filter]').forEach((button) => {
@@ -375,6 +402,16 @@ function renderCategoryCounts() {
       button.append(badge);
     }
     badge.textContent = counts[key] ?? 0;
+    // NEW 徽标插在文字与计数之间（“all” 恒有新卡时也提示，与卡片徽标同窗口）
+    let newBadge = button.querySelector('.new-badge');
+    if (hasNew[key] && !newBadge) {
+      newBadge = document.createElement('span');
+      newBadge.className = 'new-badge';
+      newBadge.textContent = 'NEW';
+      button.insertBefore(newBadge, badge);
+    } else if (!hasNew[key] && newBadge) {
+      newBadge.remove();
+    }
   });
 }
 
@@ -571,6 +608,11 @@ elements.clearFilters.addEventListener('click', () => {
 });
 
 document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && elements.followTrigger?.getAttribute('aria-expanded') === 'true') {
+    setFollowMenuOpen(false);
+    elements.followTrigger.focus();
+    return;
+  }
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
     event.preventDefault();
     elements.searchInput.focus();
