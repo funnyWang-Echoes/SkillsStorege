@@ -67,7 +67,7 @@
 
 - **未触发 skill 实际运行测试**：4 个 Skill 都没有本地实测先例（Readme 标注"外部可用（未实测）"），同步后未运行 eval/手动验证。
 - **`ppt-master` 入库 commit 待重核**：仓库 Readme 历史记录的 `a0d6243` 在上游不存在，下次刷新 `ppt-master` 前需用 `git log --reverse -- skills/ppt-master/SKILL.md` 找到 `skills/ppt-master/` 路径首次出现的真实 commit。
-- **`doing/.env` 违规**：用户已选择本轮不处理，AGENTS.md L58 仍规定 doing/ 中不得提交 `.env`。
+- **`doing/.env` 违规**：用户已选择本轮不处理，AGENTS.md L58 仍规定 doing/ 中不得提交 `.env`。**2026-09-19 复查已消解**：`doing/` 当前只含 `paper-deep-analyse/`，磁盘与 git 历史中都没有 `.env`（`git log --all --name-only` 无任何 `.env` 记录，仓库内只有上游 Skill 自带的 `.env.example`）。
 - **`neat-freak` evals fixture .env**：上游评测套件内的 `.env` 不是 Skill 运行时配置，但如果未来要在仓库内运行 evals，需注意这些 fixture 的 `.env` 不应被任何 agent 当成真实环境变量加载。
 - **video-shotcraft 体积**：`assets/audio/AUDITION-2026-07-27.md`、`assets/brand/BRAND.md` 等媒体资产授权状态本次未做合规复审，仅做版本同步。如需商用，应单独审查音频与品牌素材授权。
 - **`other-Skills/` 剩余 10 个 Skill**：hv-analysis / khazix-writer / storage-analyzer / beautiful-article / gpt-image-2 / kb-retriever / web-video-presentation / autoresearch / xiaohongshu-skills / ppt-master 在本次检查中与上游 HEAD 字节相同或来源已核验，无需同步。后续若有上游大版本发布再走本流程。

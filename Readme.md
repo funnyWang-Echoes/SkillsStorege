@@ -45,7 +45,7 @@ other-Skills/
   xiaohongshu-skills/
 ```
 
-上面的结构树只列本体已入库的目录。按需拉取型的 Skill（当前是 `archify`）不入库，因此不出现在结构树里，只在「按需拉取的外部 Skills（登记未入库）」一节登记来源与拉取方式。
+上面的结构树只列本体已入库的目录。`archify`（按需拉取）与 `grill-me` / `grilling`（来源待确认）都不入库，因此不出现在结构树里，只在「登记未入库的 Skill」一节登记。
 
 ## 个人 Agent 指令
 
@@ -82,9 +82,13 @@ other-Skills/
 | `video-shotcraft` | 用 104 张镜头配方卡、Remotion demo/模板、真实页面截图、2.5D 运镜、节奏卡点和音频素材制作电影感产品/宣传视频；v3 起含剪映工程导出能力。 | 作者 Yihao；[Vincentwei1021/video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)；Apache-2.0。 | 外部可用；2026-08-26 同步到上游 HEAD `d9ffa6d3`，副本 ~53M / 889 文件（已排除上游 `.git/` 184M）。新增 `demos/` 镜头参考实现、`gallery/` 海报与源码、`jianying-export/` 剪映工程导出（5 文件）、`assets/lib/ClipCard.tsx`、`assets/scripts/smoke-render-demos.py`、`package.json`/`package-lock.json`。依赖 Node/Remotion/浏览器等运行环境。音频授权和仍需核验的素材见 `assets/audio/ATTRIBUTION.md`。 |
 | `xiaohongshu-skills` | RedBookSkills：小红书图文/视频自动发布 + 内容检索与互动（搜索、详情、评论/回复、点赞收藏、主页快照、内容数据看板）。基于 Chrome DevTools Protocol 驱动浏览器。 | [white0dew/XiaohongshuSkills](https://github.com/white0dew/XiaohongshuSkills)；MIT（Copyright 2026 angiin）；仓库根即 Skill 本体，`SKILL.md` 中 `metadata.name=RedBookSkills` / `metadata.source=Angiin/Post-to-xhs` 与 GitHub 仓库名/作者不一致，实际以 GitHub 仓库为准。 | 外部可用（未实测）；**平台风控风险高**，建议只在测试号、小流量、人工复核标题/正文/素材后再发布；仅在 Windows + Python 3.10+ + Chrome 上验证过。剥离了 `README.md`/`LICENSE`/`AGENTS.md`/`.github`/`docs`/`images`/`public`/`assets`/`todo.md` 等外层仓库壳，只保留 `SKILL.md`、`requirements.txt`、`config/accounts.json.example`、`scripts/`。 |
 
-## 按需拉取的外部 Skills（登记未入库）
+## 登记未入库的 Skill
 
-这一节登记**只记录来源、不复制本体**的外部 Skill：本体带自更新通道、或真实本体与大量非 Skill 内容混在同一仓库、体积远超本体时，入库快照会持续与上游漂移，因此改为按需从上游 URL 拉取。核验证据见 [docs/source-verify-archify-2026-09-19.md](docs/source-verify-archify-2026-09-19.md)。
+这一节登记**存在于本机但不在本仓库**的 Skill，分两类：**按需拉取**（本体带自更新通道或体积远超本体，不入库，用时从上游拉）与**来源待确认**（本机有副本、公开上游未定位，因此没有可登记的拉取命令）。
+
+### 按需拉取（本体不入库）
+
+本体带自更新通道、或真实本体与大量非 Skill 内容混在同一仓库、体积远超本体时，入库快照会持续与上游漂移，因此改为按需从上游 URL 拉取。核验证据见 [docs/source-verify-archify-2026-09-19.md](docs/source-verify-archify-2026-09-19.md)。
 
 | Skill | 作用 | 来源 | 按需拉取方式 |
 |---|---|---|---|
@@ -96,6 +100,16 @@ other-Skills/
 - **不入库本体的理由**：上游走 development 通道并自带更新清单（`archify/skill-release.json` 的 `updateManifestUrl` → `https://tt-a1i.github.io/archify/skill-updates/archify/stable.json`），入库快照会被上游更新覆盖并持续漂移；本体分散在子目录、整仓体积远超本体，整仓入库会污染本仓库。
 - **本机已装副本**：`C:\Users\c\.zcode\skills\archify`（79 文件 / 6.4M）。按 git blob 哈希与上游 HEAD 比对：63 个文件字节一致、**16 个共有文件内容落后于 HEAD**（含 `bin/archify.mjs`、`delta/architecture-delta.mjs`、`renderers/shared/*`、`renderers/workflow/workflow-compiler.mjs`、`references/{authoring,delivery}-contract.md`、`assets/template.html`、5 个 rendered example、`package.json`），`test/`（136 文件）与 `package-lock.json` 属发行裁剪；`SKILL.md`、`skill-release.json` 与 HEAD 字节一致。`package.json` 的 `overrides.fast-uri` 本机仍为 `3.1.5`，上游 HEAD 已改为 `^3.1.7`（上游记录 3.1.5 被 4 条 advisory 覆盖）。
 - **使用注意**：本机副本不是上游最新版，需要当前实现时重跑上面的安装命令，不要以本机副本当基准；上游版本号在 development 通道下不保证随内容更新而变化，判断是否最新以 `main` HEAD 为准。
+
+### 来源待确认（本机有副本、无公开来源）
+
+这两个 Skill 是本机唯一存在、又没有可核验上游的一类，因此只登记位置与状态。核验过程见 [docs/source-verify-grill-me-2026-09-19.md](docs/source-verify-grill-me-2026-09-19.md)。
+
+| Skill | 作用 | 来源 | 本机位置与状态 |
+|---|---|---|---|
+| `grill-me` + `grilling` | 一次只问一个问题地把计划、决策或想法盘问到底，逐条解开决策树上的依赖，直到双方达成一致理解；每个问题都附带推荐答案，能用环境查证的事实自己查、只把决策留给用户。`grill-me` 是入口（正文只有一句「Run a `/grilling` session」），`grilling` 是实际逻辑。 | **来源待确认**：两个 `SKILL.md` 的 frontmatter 都没有作者、来源或 License 字段；仅凭本机文件无法判定是自用还是外部下载。 | 本机位置 `C:\Users\c\.codex\skills\grill-me` 与 `C:\Users\c\.codex\skills\grilling`（实体目录，各含 `SKILL.md` + `agents/openai.yaml`，合计 <1.5 KB）；`C:\Users\c\.zcode\skills\grill-me` 是指向 Codex 目录的**符号链接**，ZCode 侧没有链接 `grilling`，因此在 ZCode 中 `grill-me` 指向的 `/grilling` 是悬空引用，Codex 侧两个都在。**未入库、也没有拉取命令**——本机这两份副本是当前唯一副本。 |
+
+- **后续处置选项**：定位到公开上游后转为「按需拉取」；或确认属自用后移入 `my-Skills/`，由本仓库托管并去掉对 `~/.codex/skills/` 的依赖。
 
 ## 他人 / 外部 MCPs
 
@@ -132,9 +146,10 @@ other-Skills/
 
 - 后续每新增一个外部 Skill/MCP，都先记录来源再删除外层仓库壳。
 - `archify` 按「按需拉取」管理：本体不入库，需要时重跑登记里的 `npx skills add tt-a1i/archify -g`；本机副本当前落后上游 `main` HEAD（16 个文件），以 HEAD 为最新判据。若后续改主意要入库本体，先在 `doing/` 建工作副本并按发行裁剪规则定保留范围。
+- `grill-me` / `grilling` 未入库且上游未定位：本机唯一副本在 `C:\Users\c\.codex\skills\`。要长期使用就先定位公开上游转为「按需拉取」，或确认属自用后移入 `my-Skills/`；同时解决 ZCode 侧只链接了 `grill-me`、导致 `/grilling` 悬空的问题。
 - `slepp-ssh-mcp` 的 `extra_ssh_args` 黑名单绕过（`ssh -F` / `scp -S`）拟向上游提 issue，提交后在此登记链接。
 - 在 `doing/paper-deep-analyse/` 中继续优化 `paper-deep-analyse`，满意后再替换正式目录。
 - 持续评估 `paper-deep-analyse` 的满意度，尤其是报告质量、执行成本和自检流程。
 - 2026-08-26 已完成 `docs/others-skills-version-check-2026-08-26.md` 中建议的优先级刷新（`neat-freak` v3.0、`web-design-engineer` v1.3.0、`aihot` v1.5.4、`video-shotcraft` HEAD）；同步证据与残留风险见 `docs/sync-others-skills-2026-08-26.md`。
-- 仍待处理：`doing/.env` 违规（用户已选择本轮不处理）；其他 7 个 `other-Skills/` Skill 与上游 HEAD 字节相同，无需同步。`ppt-master` 入库 commit 重核已完成（已修正为 `4e57f2f7`，2026-03-20）。
+- `doing/.env` 违规已消解（2026-09-19 复查）：`doing/` 当前只含 `paper-deep-analyse/`，磁盘与 git 历史中都没有 `.env`；`git log --all --name-only` 显示本仓库从未提交过 `.env`，仓库内仅有上游 Skill 自带的 `.env.example`。当时记录的 7 个「与上游 HEAD 字节相同」的 Skill 结论保留在 [docs/others-skills-version-check-2026-08-26.md](docs/others-skills-version-check-2026-08-26.md)。`ppt-master` 入库 commit 重核已完成（已修正为 `4e57f2f7`，2026-03-20）。
 - 2026-08-26 已完成 `ppt-master` v5.0.0 架构级同步（1740 文件 / +207k -37k 行），下游调用方需按 routing.md + profiles/* 重新对照流程；v2 时代的 8 个 workflows（create-brand/customize-animations/generate-audio/live-preview/resume-execute/topic-research/verify-charts/visual-review）在 v5 中被路由表替代，调用方式变化。
