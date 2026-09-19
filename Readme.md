@@ -45,6 +45,8 @@ other-Skills/
   xiaohongshu-skills/
 ```
 
+上面的结构树只列本体已入库的目录。按需拉取型的 Skill（当前是 `archify`）不入库，因此不出现在结构树里，只在「按需拉取的外部 Skills（登记未入库）」一节登记来源与拉取方式。
+
 ## 个人 Agent 指令
 
 `myAgentsMD/` 用来保存我自己的 Agent 协作规则，当前包含 `AGENTS.md`。这个目录的目标是方便换设备时迁移和持续更新个人默认指令，不作为可安装 Skill 管理，因此不适用“每个 Skill 目录必须直接包含 `SKILL.md`”的检查规则。
@@ -80,6 +82,21 @@ other-Skills/
 | `video-shotcraft` | 用 104 张镜头配方卡、Remotion demo/模板、真实页面截图、2.5D 运镜、节奏卡点和音频素材制作电影感产品/宣传视频；v3 起含剪映工程导出能力。 | 作者 Yihao；[Vincentwei1021/video-shotcraft](https://github.com/Vincentwei1021/video-shotcraft)；Apache-2.0。 | 外部可用；2026-08-26 同步到上游 HEAD `d9ffa6d3`，副本 ~53M / 889 文件（已排除上游 `.git/` 184M）。新增 `demos/` 镜头参考实现、`gallery/` 海报与源码、`jianying-export/` 剪映工程导出（5 文件）、`assets/lib/ClipCard.tsx`、`assets/scripts/smoke-render-demos.py`、`package.json`/`package-lock.json`。依赖 Node/Remotion/浏览器等运行环境。音频授权和仍需核验的素材见 `assets/audio/ATTRIBUTION.md`。 |
 | `xiaohongshu-skills` | RedBookSkills：小红书图文/视频自动发布 + 内容检索与互动（搜索、详情、评论/回复、点赞收藏、主页快照、内容数据看板）。基于 Chrome DevTools Protocol 驱动浏览器。 | [white0dew/XiaohongshuSkills](https://github.com/white0dew/XiaohongshuSkills)；MIT（Copyright 2026 angiin）；仓库根即 Skill 本体，`SKILL.md` 中 `metadata.name=RedBookSkills` / `metadata.source=Angiin/Post-to-xhs` 与 GitHub 仓库名/作者不一致，实际以 GitHub 仓库为准。 | 外部可用（未实测）；**平台风控风险高**，建议只在测试号、小流量、人工复核标题/正文/素材后再发布；仅在 Windows + Python 3.10+ + Chrome 上验证过。剥离了 `README.md`/`LICENSE`/`AGENTS.md`/`.github`/`docs`/`images`/`public`/`assets`/`todo.md` 等外层仓库壳，只保留 `SKILL.md`、`requirements.txt`、`config/accounts.json.example`、`scripts/`。 |
 
+## 按需拉取的外部 Skills（登记未入库）
+
+这一节登记**只记录来源、不复制本体**的外部 Skill：本体带自更新通道、或真实本体与大量非 Skill 内容混在同一仓库、体积远超本体时，入库快照会持续与上游漂移，因此改为按需从上游 URL 拉取。核验证据见 [docs/source-verify-archify-2026-09-19.md](docs/source-verify-archify-2026-09-19.md)。
+
+| Skill | 作用 | 来源 | 按需拉取方式 |
+|---|---|---|---|
+| `archify` | 把代码库或系统描述编译成可交互系统图（architecture / workflow / sequence / dataflow / lifecycle 五类），输出自包含 HTML（内联 SVG），支持深浅主题、有限动效、Before/Delta/After 快照对比，可导出 PNG/SVG/WebM 与 1200×630 分享卡。 | [tt-a1i/archify](https://github.com/tt-a1i/archify)；MIT；作者 `tt-a1i`；项目页 <https://tt-a1i.github.io/archify/>；**真实本体在上游 `archify/` 子目录**（`SKILL.md` + `package.json` + `bin/` + `schemas/` + `renderers/` + `delta/` + `references/` + `recipes/` + `brand-marks/` + `migrations/` + `test/`），仓库根另有 `docs/`、`viewer/`、`benchmarks/`、`experiments/`、`integrations/`、`scripts/` 等非 Skill 内容，整仓 ≈224 MB。 | 全局安装：`npx skills add tt-a1i/archify -g`；非交互指定 agent：`npx -y skills add tt-a1i/archify --skill archify --agent cursor --global --copy --yes`；免安装试用：`npx skills use tt-a1i/archify@archify --agent codex`；离线 ZIP：取仓库根 `archify.zip` 解压到目标 skills 目录，得到 `archify/`。要求 Node.js >= 18。 |
+
+登记详情（2026-09-19 核验）：
+
+- **上游定位**：`main` HEAD `72c750bb`（2026-09-16），当前开发版 `v2.17.0-dev.1`；仓库创建 2026-04-15，MIT，66,939 stars / 4,464 forks。
+- **不入库本体的理由**：上游走 development 通道并自带更新清单（`archify/skill-release.json` 的 `updateManifestUrl` → `https://tt-a1i.github.io/archify/skill-updates/archify/stable.json`），入库快照会被上游更新覆盖并持续漂移；本体分散在子目录、整仓体积远超本体，整仓入库会污染本仓库。
+- **本机已装副本**：`C:\Users\c\.zcode\skills\archify`（79 文件 / 6.4M）。按 git blob 哈希与上游 HEAD 比对：63 个文件字节一致、**16 个共有文件内容落后于 HEAD**（含 `bin/archify.mjs`、`delta/architecture-delta.mjs`、`renderers/shared/*`、`renderers/workflow/workflow-compiler.mjs`、`references/{authoring,delivery}-contract.md`、`assets/template.html`、5 个 rendered example、`package.json`），`test/`（136 文件）与 `package-lock.json` 属发行裁剪；`SKILL.md`、`skill-release.json` 与 HEAD 字节一致。`package.json` 的 `overrides.fast-uri` 本机仍为 `3.1.5`，上游 HEAD 已改为 `^3.1.7`（上游记录 3.1.5 被 4 条 advisory 覆盖）。
+- **使用注意**：本机副本不是上游最新版，需要当前实现时重跑上面的安装命令，不要以本机副本当基准；上游版本号在 development 通道下不保证随内容更新而变化，判断是否最新以 `main` HEAD 为准。
+
 ## 他人 / 外部 MCPs
 
 | MCP | 作用 | 来源 | 可用程度 |
@@ -114,6 +131,7 @@ other-Skills/
 ## 后续待办
 
 - 后续每新增一个外部 Skill/MCP，都先记录来源再删除外层仓库壳。
+- `archify` 按「按需拉取」管理：本体不入库，需要时重跑登记里的 `npx skills add tt-a1i/archify -g`；本机副本当前落后上游 `main` HEAD（16 个文件），以 HEAD 为最新判据。若后续改主意要入库本体，先在 `doing/` 建工作副本并按发行裁剪规则定保留范围。
 - `slepp-ssh-mcp` 的 `extra_ssh_args` 黑名单绕过（`ssh -F` / `scp -S`）拟向上游提 issue，提交后在此登记链接。
 - 在 `doing/paper-deep-analyse/` 中继续优化 `paper-deep-analyse`，满意后再替换正式目录。
 - 持续评估 `paper-deep-analyse` 的满意度，尤其是报告质量、执行成本和自检流程。
