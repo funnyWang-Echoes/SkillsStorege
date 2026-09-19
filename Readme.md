@@ -47,6 +47,11 @@ other-Skills/
 
 上面的结构树只列本体已入库的目录。`archify`（按需拉取）与 `grill-me` / `grilling`（来源待确认）都不入库，因此不出现在结构树里，只在「登记未入库的 Skill」一节登记。
 
+本机安装拓扑（2026-09-19 核验）：
+
+- `C:\Users\c\.zcode\skills\`：除 `archify`（npm 安装的实体目录）与 `grill-me`（指向 Codex 目录的符号链接）外，**全部是指向本仓库的符号链接**，仓库改动即时生效。
+- `C:\Users\c\.codex\skills\`：**实体副本**，与仓库没有链接关系、不会自动刷新；仓库更新后必须手动重同步。核验与同步记录见 [docs/sync-harness-installs-2026-09-19.md](docs/sync-harness-installs-2026-09-19.md)。
+
 ## 个人 Agent 指令
 
 `myAgentsMD/` 用来保存我自己的 Agent 协作规则，当前包含 `AGENTS.md`。这个目录的目标是方便换设备时迁移和持续更新个人默认指令，不作为可安装 Skill 管理，因此不适用“每个 Skill 目录必须直接包含 `SKILL.md`”的检查规则。
@@ -147,6 +152,7 @@ other-Skills/
 - 后续每新增一个外部 Skill/MCP，都先记录来源再删除外层仓库壳。
 - `archify` 按「按需拉取」管理：本体不入库，需要时重跑登记里的 `npx skills add tt-a1i/archify -g`；本机副本当前落后上游 `main` HEAD（16 个文件），以 HEAD 为最新判据。若后续改主意要入库本体，先在 `doing/` 建工作副本并按发行裁剪规则定保留范围。
 - `grill-me` / `grilling` 未入库且上游未定位：本机唯一副本在 `C:\Users\c\.codex\skills\`。要长期使用就先定位公开上游转为「按需拉取」，或确认属自用后移入 `my-Skills/`；同时解决 ZCode 侧只链接了 `grill-me`、导致 `/grilling` 悬空的问题。
+- 仓库每次更新 `other-Skills/` 后，手动同步刷新 `C:\Users\c\.codex\skills\` 的对应实体副本（Codex 侧不随仓库自动更新）；2026-09-19 已同步 `aihot`、`neat-freak`、`web-design-engineer`、`ppt-master`。备份 `C:\Users\c\.codex\skills-backup-2026-09-19\`（65M）确认无误后可删除，删前若需要 v2 时代的 `招商银行` / `重庆大学` 等品牌模板需先取出。
 - `slepp-ssh-mcp` 的 `extra_ssh_args` 黑名单绕过（`ssh -F` / `scp -S`）拟向上游提 issue，提交后在此登记链接。
 - 在 `doing/paper-deep-analyse/` 中继续优化 `paper-deep-analyse`，满意后再替换正式目录。
 - 持续评估 `paper-deep-analyse` 的满意度，尤其是报告质量、执行成本和自检流程。
