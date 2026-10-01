@@ -3,7 +3,9 @@
 - **日期**：2026-10-01
 - **触发原因**：用户要求把 `myAgentsMD/AGENTS.md` 化繁为简，并同步本机各 agent 软件
 - **会话**：main session
-- **结论**：协议从 476 行 / 168 条正文条目压缩为 194 行 / 96 条，语义覆盖不变；三端副本已同步为与母本逐字节一致
+- **结论**：协议从 476 行 / 168 条正文条目压缩为 175 行 / 79 条，语义覆盖不变；三端副本已同步为与母本逐字节一致（md5 `cbfb8a11`）
+
+> 本文件在首次提交（`e822c41d`）后按用户审查意见做了第二轮修订，见第 5 节。第 1–3 节记录的 `e822c41d` 为中间态。
 
 ## 1. 简化前后对照
 
@@ -39,18 +41,46 @@ provenance old=0 new=1      fallback  old=2  new=2
 
 本机三处 harness 级指令文件都是**实体副本**（与 `~/.codex/skills` 同理，不随仓库自动刷新）：
 
-| 路径 | 形态 | 同步前 md5 | 同步后 md5 |
+| 路径 | 形态 | 同步前 md5 | 第二轮修订后 md5 |
 |---|---|---|---|
-| `C:\Users\c\.zcode\AGENTS.md` | 实体文件 | `2bc7b332` | `e822c41d` |
-| `C:\Users\c\.codex\AGENTS.md` | 实体文件 | `2bc7b332` | `e822c41d` |
-| `C:\Users\c\.claude\CLAUDE.md` | 实体文件 | `2bc7b332` | `e822c41d` |
+| `C:\Users\c\.zcode\AGENTS.md` | 实体文件 | `2bc7b332` | `cbfb8a11` |
+| `C:\Users\c\.codex\AGENTS.md` | 实体文件 | `2bc7b332` | `cbfb8a11` |
+| `C:\Users\c\.claude\CLAUDE.md` | 实体文件 | `2bc7b332` | `cbfb8a11` |
 
-同步前 md5 三处一致且等于仓库 HEAD `6057c7e` 的 `myAgentsMD/AGENTS.md`，说明此前三端保持同步、无本地独有内容，镜像覆盖无损失。同步后三处 md5 与仓库工作副本母本 `e822c41d` 一致，`wc -l` 均为 194 行。
+同步前 md5 三处一致且等于仓库 HEAD `6057c7e` 的 `myAgentsMD/AGENTS.md`，说明此前三端保持同步、无本地独有内容，镜像覆盖无损失。第二轮修订后三处 md5 与仓库母本 `cbfb8a11` 一致，`wc -l` 均为 175 行。（中间态 `e822c41d` / 194 行为首次简化后的状态，已被本轮取代。）
 
 **备份**：`C:\Users\c\.agents-md-backup-20261001-215930\`（`zcode-AGENTS.md` / `codex-AGENTS.md` / `claude-CLAUDE.md`，各 10,975 B）。确认无误后可删除。
 
-## 4. 残留风险与下一步
+## 4. 第二轮修订：移除跨 harness 不适用的约束
+
+用户审查指出第 9 章硬编码的子代理角色是「某个软件的」，属过强约束。核查证实：
+
+**`mavis` 的出处**：`C:\Users\c\.claude\projects\D--SoftWare-MiniMaxCode\memory\minimax-safety-gate.md` 记录 MiniMax Code 桌面端的安审门拦截路径为 `/mavis/api/(v1|v2)/content` —— **`mavis` 是 MiniMax Code 自身的 API 路径名**，与 ZCode、Codex、Claude Code 无关。原第 9 章的四个角色（`mavis`/`explore`/`worker`/`verifier`）来自 MiniMaxCode 那套 agent 命名，被误当作通用能力写进了协议。
+
+**三端实际能力**：
+
+| Harness | 子代理机制 | 是否提供这四种角色 |
+|---|---|---|
+| ZCode | 有，角色名为 `general-purpose` / `Explore` / `code-deepseek` / `code-glm5-3-flash` / `code-qwen3-8` | 否，命名完全不同 |
+| Codex | 无 `.codex/agents/`，`config.toml` 无 agent 段 | 否 |
+| Claude Code | 无 `.claude/agents/`，`settings.json` 仅含 env | 否 |
+
+该条在 Codex / Claude Code 中的实际后果是**规则自相矛盾**：既要求「必须安排对抗性审查」，又不提供所需角色，Agent 只能停下询问或跳过执行。
+
+本轮共四处改动：
+
+| 位置 | 原状 | 现状 |
+|---|---|---|
+| 第 9 章角色清单 | 硬编码四个 harness 专属角色名 | 改为通用能力描述（只读摸底 / 明确文件所有权 / 验证不修改被验证文件），声明「可用角色以当前 harness 实际提供的为准」 |
+| 第 9 章审查触发 | 「变更涉及…时，安排审查」，列 11 类条件 | 改为按失误代价和影响面判断，并明确「改动小且可逆时直接验证，不必开审查」 |
+| 第 4 章测试要求 | 6 条，其中「运行时行为重要时优先 smoke test」与「至少完成一种等价验证」重复 | 3 条，按验证下限 / 测试范围梯度 / 异常可见组织 |
+| 第 10 章交付 | 汇报 5 条 + 交付前自查 10 条，其中多项与前文重复 | 汇报清单 1 段 + 交付确认 5 条，删除与前文的复述 |
+
+强约束词（`必须`/`始终`/`禁止`/`仅`/`一律`/`每次`/`任何`/`所有`/`严格`）计数：原版 6 处 → 现状 1 处。
+
+## 5. 残留风险与下一步
 
 - **无自动化**：三端是实体副本，协议每次更新都要手动重分发。本次已第二次遇到同类问题（首次为 [sync-harness-installs-2026-09-19.md](sync-harness-installs-2026-09-19.md) 的 Codex 侧 Skill 副本），**分发脚本或改为符号链接**值得提上日程。
 - **其它 harness 未覆盖**：本次只处理已确认存在的三处（ZCode / Codex / Claude Code）。若本机还装有其它读取 `AGENTS.md` / `CLAUDE.md` 的工具，需要另行插桩。
-- **协议内容未做增删判断**：本次只做简化与同步，未评估各条目是否仍适应当前工具链（例如第 9 章列出的 `mavis`/`explore`/`worker`/`verifier` 子代理角色是否仍是当前环境的实际可用角色）。
+- **其余条目未逐条复核**：第 9 章的四角色问题已修（见第 4 节），但协议里是否还有其它「来自单一 harness 却被写成通用规则」的内容没有系统排查。建议下次审查时按 harness 逐个对照：ZCode 的工具集、Codex 的 sandbox 语义、Claude Code 的权限模型各有哪些专属能力被写进了通用条款。
+- **`e822c41d` 中间态未单独提交**：首次简化与第二轮修订同属一个提交范围内，git 历史只保留最终态，中间态的 md5 仅在本文件留档。
