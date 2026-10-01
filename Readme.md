@@ -54,7 +54,15 @@ other-Skills/
 
 ## 个人 Agent 指令
 
-`myAgentsMD/` 用来保存我自己的 Agent 协作规则，当前包含 `AGENTS.md`。这个目录的目标是方便换设备时迁移和持续更新个人默认指令，不作为可安装 Skill 管理，因此不适用“每个 Skill 目录必须直接包含 `SKILL.md`”的检查规则。
+`myAgentsMD/` 用来保存我自己的 Agent 协作规则，当前包含 `AGENTS.md`。这个目录的目标是方便换设备时迁移和持续更新个人默认指令，不作为可安装 Skill 管理，因此不适用“每个 Skill 目录必须直接包含 `SKILL.md`”的检查规则。它是**母本**，本机各 harness 的指令文件都是它的实体副本。
+
+本机分发位置（2026-10-01 核验）：
+
+- `C:\Users\c\.zcode\AGENTS.md` — ZCode
+- `C:\Users\c\.codex\AGENTS.md` — Codex
+- `C:\Users\c\.claude\CLAUDE.md` — Claude Code
+
+三处都是**实体副本**，改动母本后必须手动重新分发，命令为 `cp myAgentsMD/AGENTS.md <目标路径>`。分发后核对 md5 与母本一致。同步记录见 [docs/sync-agents-protocol-2026-10-01.md](docs/sync-agents-protocol-2026-10-01.md)。
 
 ## 我自己的 Skills
 
